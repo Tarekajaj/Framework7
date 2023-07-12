@@ -1,6 +1,6 @@
-import Utils from '../../utils/utils';
-import Autocomplete from './autocomplete-class';
-import ConstructorMethods from '../../utils/constructor-methods';
+import { extend } from '../../shared/utils.js';
+import Autocomplete from './autocomplete-class.js';
+import ConstructorMethods from '../../shared/constructor-methods.js';
 
 export default {
   name: 'autocomplete',
@@ -15,7 +15,6 @@ export default {
       dropdownPlaceholderText: undefined,
       typeahead: false,
       highlightMatches: true,
-      expandInput: false,
       updateInputValueOnSelect: true,
       inputEvents: 'input',
 
@@ -33,7 +32,11 @@ export default {
       pageTitle: undefined,
       searchbarPlaceholder: 'Search...',
       searchbarDisableText: 'Cancel',
-      searchbarDisableButton: undefined,
+      searchbarDisableButton: true,
+      searchbarSpellcheck: false,
+
+      popupPush: false,
+      popupSwipeToClose: undefined,
 
       animate: true,
 
@@ -51,7 +54,7 @@ export default {
       navbarColorTheme: undefined,
 
       // Routing
-      routableModals: true,
+      routableModals: false,
       url: 'select/',
 
       // Custom render functions
@@ -61,7 +64,6 @@ export default {
       renderItem: undefined,
       renderSearchbar: undefined,
       renderNavbar: undefined,
-
     },
   },
   static: {
@@ -69,7 +71,7 @@ export default {
   },
   create() {
     const app = this;
-    app.autocomplete = Utils.extend(
+    app.autocomplete = extend(
       ConstructorMethods({
         defaultSelector: undefined,
         constructor: Autocomplete,
@@ -87,7 +89,7 @@ export default {
           if (ac && ac.close) return ac.close();
           return undefined;
         },
-      }
+      },
     );
   },
 };

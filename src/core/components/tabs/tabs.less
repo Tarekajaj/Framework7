@@ -26,13 +26,11 @@
     transition-duration: 0ms;
   }
 }
-.tabs-swipeable-wrap {
+swiper-container.tabs {
   height: 100%;
-  > .tabs {
-    height: 100%;
-  }
-  > .tabs > .tab {
+  > .tab {
     display: block;
+    touch-action: pan-y;
   }
 }
 .page > .tabs {
@@ -40,11 +38,8 @@
 }
 
 .if-ios-theme({
-  @import url('./tabs-ios.less');
+  @import './tabs-ios.less';
 });
 .if-md-theme({
-  @import url('./tabs-md.less');
-});
-.if-aurora-theme({
-  @import url('./tabs-aurora.less');
+  @import './tabs-md.less';
 });

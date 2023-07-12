@@ -1,5 +1,5 @@
-import Actions from './actions-class';
-import ModalMethods from '../../utils/modal-methods';
+import Actions from './actions-class.js';
+import ModalMethods from '../../shared/modal-methods.js';
 
 export default {
   name: 'actions',
@@ -9,10 +9,13 @@ export default {
       forceToPopover: false,
       backdrop: true,
       backdropEl: undefined,
+      backdropUnique: false,
+      cssClass: null,
       closeByBackdropClick: true,
       closeOnEscape: false,
       render: null,
       renderPopover: null,
+      containerEl: null,
     },
   },
   static: {
@@ -29,11 +32,11 @@ export default {
   clicks: {
     '.actions-open': function openActions($clickedEl, data = {}) {
       const app = this;
-      app.actions.open(data.actions, data.animate);
+      app.actions.open(data.actions, data.animate, $clickedEl);
     },
     '.actions-close': function closeActions($clickedEl, data = {}) {
       const app = this;
-      app.actions.close(data.actions, data.animate);
+      app.actions.close(data.actions, data.animate, $clickedEl);
     },
   },
 };

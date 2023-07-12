@@ -1,69 +1,54 @@
-import Template7 from 'template7';
-import $ from 'dom7';
+import $ from './shared/dom7.js';
 
-// F7 Class
-import Framework7 from './components/app/app-class';
+import Framework7 from './components/app/app-class.js';
 
-// Import Helpers
-//ES_IMPORT_HELPERS
+//IMPORT_HELPERS
 
-// Core Modules
-import DeviceModule from './modules/device/device';
-import SupportModule from './modules/support/support';
-import UtilsModule from './modules/utils/utils';
-import ResizeModule from './modules/resize/resize';
-import RequestModule from './modules/request/request';
-import TouchModule from './modules/touch/touch';
-import ClicksModule from './modules/clicks/clicks';
-import RouterModule from './modules/router/router';
-import RouterTemplateLoaderModule from './modules/router/template-loader';
-import RouterComponentLoaderModule from './modules/router/component-loader';
-import HistoryModule from './modules/history/history';
-import StorageModule from './modules/storage/storage';
-import ComponentModule from './modules/component/component';
-import ServiceWorkerModule from './modules/service-worker/service-worker';
+import DeviceModule from './modules/device/device.js';
+import SupportModule from './modules/support/support.js';
+import UtilsModule from './modules/utils/utils.js';
+import ResizeModule from './modules/resize/resize.js';
+import TouchModule from './modules/touch/touch.js';
+import ClicksModule from './modules/clicks/clicks.js';
+import RouterModule from './modules/router/router.js';
+import RouterComponentLoaderModule from './modules/router/component-loader.js';
+import ComponentModule, { Component, $jsx } from './modules/component/component.js';
+import HistoryModule from './modules/history/history.js';
+import ServiceWorkerModule from './modules/service-worker/service-worker.js';
+import StoreModule, { createStore } from './modules/store/store.js';
 
-// Core Components
-import Statusbar from './components/statusbar/statusbar';
-import View from './components/view/view';
-import Navbar from './components/navbar/navbar';
-import Toolbar from './components/toolbar/toolbar';
-import Subnavbar from './components/subnavbar/subnavbar';
-import TouchRipple from './components/touch-ripple/touch-ripple';
-import Modal from './components/modal/modal';
-import Router from './modules/router/router-class';
+import Statusbar from './components/statusbar/statusbar.js';
+import View from './components/view/view.js';
+import Navbar from './components/navbar/navbar.js';
+import Toolbar from './components/toolbar/toolbar.js';
+import Subnavbar from './components/subnavbar/subnavbar.js';
+import TouchRipple from './components/touch-ripple/touch-ripple.js';
+import Modal from './components/modal/modal.js';
+import Router from './modules/router/router-class.js';
 
 //IMPORT_COMPONENTS
 
-if (process.env.FORMAT !== 'es') {
-  if (typeof window !== 'undefined') {
-    // Template7
-    if (!window.Template7) window.Template7 = Template7;
-
-    // Dom7
-    if (!window.Dom7) window.Dom7 = $;
-  }
+// UMD_ONLY_START
+if (typeof window !== 'undefined') {
+  // Dom7
+  if (!window.Dom7) window.Dom7 = $;
 }
+// UMD_ONLY_END
 
-// Install Core Modules & Components
-Router.use([
-  RouterTemplateLoaderModule,
-  RouterComponentLoaderModule,
-]);
+Router.use([RouterComponentLoaderModule]);
 
 Framework7.use([
   DeviceModule,
   SupportModule,
   UtilsModule,
   ResizeModule,
-  RequestModule,
   TouchModule,
   ClicksModule,
   RouterModule,
   HistoryModule,
-  StorageModule,
   ComponentModule,
   ServiceWorkerModule,
+  StoreModule,
   Statusbar,
   View,
   Navbar,
@@ -74,5 +59,5 @@ Framework7.use([
   //INSTALL_COMPONENTS
 ]);
 
-//NAMED_ES_EXPORT
+//NAMED_EXPORT
 export default Framework7;

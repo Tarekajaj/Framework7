@@ -2,20 +2,38 @@
   <f7-page>
     <f7-navbar title="Checkbox" back-link="Back"></f7-navbar>
     <f7-block-title>Inline</f7-block-title>
-    <f7-block strong>
-      <p>Lorem <f7-checkbox name="checkbox-1"></f7-checkbox> ipsum dolor sit amet, consectetur adipisicing elit. Alias beatae illo nihil aut eius commodi sint eveniet aliquid eligendi <f7-checkbox name="checkbox-2" checked></f7-checkbox> ad delectus impedit tempore nemo, enim vel praesentium consequatur nulla mollitia!</p>
+    <f7-block strong-ios outline-ios>
+      <p>
+        Lorem <f7-checkbox name="checkbox-1"></f7-checkbox> ipsum dolor sit amet, consectetur
+        adipisicing elit. Alias beatae illo nihil aut eius commodi sint eveniet aliquid eligendi
+        <f7-checkbox name="checkbox-2" checked></f7-checkbox> ad delectus impedit tempore nemo, enim
+        vel praesentium consequatur nulla mollitia!
+      </p>
     </f7-block>
 
     <f7-block-title>Checkbox Group</f7-block-title>
-    <f7-list>
+    <f7-list strong-ios outline-ios dividers-ios>
       <f7-list-item checkbox title="Books" name="demo-checkbox" checked></f7-list-item>
       <f7-list-item checkbox title="Movies" name="demo-checkbox"></f7-list-item>
       <f7-list-item checkbox title="Food" name="demo-checkbox"></f7-list-item>
       <f7-list-item checkbox title="Drinks" name="demo-checkbox"></f7-list-item>
     </f7-list>
 
+    <f7-list strong-ios outline-ios dividers-ios>
+      <f7-list-item
+        checkbox
+        checkbox-icon="end"
+        title="Books"
+        name="demo-checkbox"
+        checked
+      ></f7-list-item>
+      <f7-list-item checkbox checkbox-icon="end" title="Movies" name="demo-checkbox"></f7-list-item>
+      <f7-list-item checkbox checkbox-icon="end" title="Food" name="demo-checkbox"></f7-list-item>
+      <f7-list-item checkbox checkbox-icon="end" title="Drinks" name="demo-checkbox"></f7-list-item>
+    </f7-list>
+
     <f7-block-title>Indeterminate State</f7-block-title>
-    <f7-list>
+    <f7-list strong-ios outline-ios dividers-ios>
       <f7-list-item
         checkbox
         title="Movies"
@@ -24,29 +42,31 @@
         :indeterminate="movies.length === 1"
         @change="onMoviesChange"
       >
-        <ul slot="root">
-          <f7-list-item
-            checkbox
-            title="Movie 1"
-            name="demo-checkbox"
-            value="Movie 1"
-            :checked="movies.indexOf('Movie 1') >= 0"
-            @change="onMovieChange"
-          />
-          <f7-list-item
-            checkbox
-            title="Movie 2"
-            name="demo-checkbox"
-            value="Movie 2"
-            :checked="movies.indexOf('Movie 2') >= 0"
-            @change="onMovieChange"
-          />
-        </ul>
+        <template #root>
+          <ul>
+            <f7-list-item
+              checkbox
+              title="Movie 1"
+              name="demo-checkbox"
+              value="Movie 1"
+              :checked="movies.indexOf('Movie 1') >= 0"
+              @change="onMovieChange"
+            />
+            <f7-list-item
+              checkbox
+              title="Movie 2"
+              name="demo-checkbox"
+              value="Movie 2"
+              :checked="movies.indexOf('Movie 2') >= 0"
+              @change="onMovieChange"
+            />
+          </ul>
+        </template>
       </f7-list-item>
     </f7-list>
 
     <f7-block-title>With Media Lists</f7-block-title>
-    <f7-list media-list>
+    <f7-list media-list strong-ios outline-ios dividers-ios>
       <f7-list-item
         checkbox
         checked
@@ -84,43 +104,51 @@
   </f7-page>
 </template>
 <script>
-  import { f7Navbar, f7Page, f7BlockTitle, f7Block, f7List, f7ListItem, f7Checkbox } from 'framework7-vue';
+import {
+  f7Navbar,
+  f7Page,
+  f7BlockTitle,
+  f7Block,
+  f7List,
+  f7ListItem,
+  f7Checkbox,
+} from 'framework7-vue';
 
-  export default {
-    components: {
-      f7Navbar,
-      f7Page,
-      f7BlockTitle,
-      f7Block,
-      f7List,
-      f7ListItem,
-      f7Checkbox,
+export default {
+  components: {
+    f7Navbar,
+    f7Page,
+    f7BlockTitle,
+    f7Block,
+    f7List,
+    f7ListItem,
+    f7Checkbox,
+  },
+  data() {
+    return {
+      movies: ['Movie 1'],
+    };
+  },
+  methods: {
+    onMovieChange(e) {
+      const self = this;
+      const value = e.target.value;
+      const movies = self.movies;
+      if (e.target.checked) {
+        movies.push(value);
+      } else {
+        movies.splice(movies.indexOf(value), 1);
+      }
     },
-    data: function () {
-      return {
-        movies: ['Movie 1'],
-      };
+    onMoviesChange() {
+      const self = this;
+      const movies = self.movies;
+      if (movies.length === 1 || movies.length === 0) {
+        self.movies = ['Movie 1', 'Movie 2'];
+      } else if (movies.length === 2) {
+        self.movies = [];
+      }
     },
-    methods: {
-      onMovieChange: function (e) {
-        var self = this;
-        var value = e.target.value;
-        var movies = self.movies;
-        if (e.target.checked) {
-          movies.push(value);
-        } else {
-          movies.splice(movies.indexOf(value), 1);
-        }
-      },
-      onMoviesChange: function (e) {
-        var self = this;
-        var movies = self.movies;
-        if (movies.length === 1 || movies.length === 0) {
-          self.movies = ['Movie 1', 'Movie 2'];
-        } else if (movies.length === 2) {
-          self.movies = [];
-        }
-      },
-    }
-  };
+  },
+};
 </script>

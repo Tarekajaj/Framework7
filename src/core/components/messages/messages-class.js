@@ -1,6 +1,8 @@
-import $ from 'dom7';
-import Utils from '../../utils/utils';
-import Framework7Class from '../../utils/class';
+import $ from '../../shared/dom7.js';
+import { extend, deleteProps } from '../../shared/utils.js';
+import Framework7Class from '../../shared/class.js';
+/** @jsx $jsx */
+import $jsx from '../../shared/$jsx.js';
 
 class Messages extends Framework7Class {
   constructor(app, params = {}) {
@@ -28,7 +30,7 @@ class Messages extends Framework7Class {
     // Extend defaults with modules params
     m.useModulesParams(defaults);
 
-    m.params = Utils.extend(defaults, params);
+    m.params = extend(defaults, params);
 
     const $el = $(params.el).eq(0);
     if ($el.length === 0) return m;
@@ -39,13 +41,12 @@ class Messages extends Framework7Class {
 
     const $pageContentEl = $el.closest('.page-content').eq(0);
 
-    Utils.extend(m, {
+    extend(m, {
       messages: m.params.messages,
       $el,
       el: $el[0],
       $pageContentEl,
       pageContentEl: $pageContentEl[0],
-
     });
     // Install Modules
     m.useModules();
@@ -75,10 +76,16 @@ class Messages extends Framework7Class {
       data.text = $messageEl.html();
     }
     if (data.text && data.textHeader) {
-      data.text = data.text.replace(`<div class="message-text-header">${data.textHeader}</div>`, '');
+      data.text = data.text.replace(
+        `<div class="message-text-header">${data.textHeader}</div>`,
+        '',
+      );
     }
     if (data.text && data.textFooter) {
-      data.text = data.text.replace(`<div class="message-text-footer">${data.textFooter}</div>`, '');
+      data.text = data.text.replace(
+        `<div class="message-text-footer">${data.textFooter}</div>`,
+        '',
+      );
     }
     let avatar = $messageEl.find('.message-avatar').css('background-image');
     if (avatar === 'none' || avatar === '') avatar = undefined;
@@ -95,7 +102,7 @@ class Messages extends Framework7Class {
   getMessagesData() {
     const m = this;
     const data = [];
-    m.$el.find('.message, .messages-title').each((index, messageEl) => {
+    m.$el.find('.message, .messages-title').each((messageEl) => {
       data.push(m.getMessageData(messageEl));
     });
     return data;
@@ -103,41 +110,66 @@ class Messages extends Framework7Class {
 
   renderMessage(messageToRender) {
     const m = this;
-    const message = Utils.extend({
-      type: 'sent',
-      attrs: {},
-    }, messageToRender);
+    const message = extend(
+      {
+        type: 'sent',
+        attrs: {},
+      },
+      messageToRender,
+    );
     if (m.params.renderMessage) {
       return m.params.renderMessage.call(m, message);
     }
     if (message.isTitle) {
       return `<div class="messages-title">${message.text}</div>`;
     }
-    const attrs = Object.keys(message.attrs).map(attr => `${attr}="${message.attrs[attr]}"`).join(' ');
-    return `
-      <div class="message message-${message.type} ${message.isTyping ? 'message-typing' : ''} ${message.cssClass || ''}" ${attrs}>
-        ${message.avatar ? `
-        <div class="message-avatar" style="background-image:url(${message.avatar})"></div>
-        ` : ''}
+    return (
+      <div
+        class={`message message-${message.type} ${message.isTyping ? 'message-typing' : ''} ${
+          message.cssClass || ''
+        }`}
+        {...message.attrs}
+      >
+        {message.avatar && (
+          <div class="message-avatar" style={`background-image:url(${message.avatar})`}></div>
+        )}
         <div class="message-content">
-          ${message.name ? `<div class="message-name">${message.name}</div>` : ''}
-          ${message.header ? `<div class="message-header">${message.header}</div>` : ''}
+          {message.name && <div class="message-name">{message.name}</div>}
+          {message.header && <div class="message-header">{message.header}</div>}
           <div class="message-bubble">
-            ${message.textHeader ? `<div class="message-text-header">${message.textHeader}</div>` : ''}
-            ${message.image ? `<div class="message-image">${message.image}</div>` : ''}
-            ${message.imageSrc && !message.image ? `<div class="message-image"><img src="${message.imageSrc}"></div>` : ''}
-            ${message.text || message.isTyping ? `<div class="message-text">${message.text || ''}${message.isTyping ? '<div class="message-typing-indicator"><div></div><div></div><div></div></div>' : ''}</div>` : ''}
-            ${message.textFooter ? `<div class="message-text-footer">${message.textFooter}</div>` : ''}
+            {message.textHeader && <div class="message-text-header">{message.textHeader}</div>}
+            {message.image && <div class="message-image">{message.image}</div>}
+            {message.imageSrc && !message.image && (
+              <div class="message-image">
+                <img src={message.imageSrc} />
+              </div>
+            )}
+            {(message.text || message.isTyping) && (
+              <div class="message-text">
+                {message.text || ''}
+                {message.isTyping && (
+                  <div class="message-typing-indicator">
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                  </div>
+                )}
+              </div>
+            )}
+            {message.textFooter && <div class="message-text-footer">{message.textFooter}</div>}
           </div>
-          ${message.footer ? `<div class="message-footer">${message.footer}</div>` : ''}
+          {message.footer && <div class="message-footer">{message.footer}</div>}
         </div>
       </div>
-    `;
+    );
   }
 
-  renderMessages(messagesToRender = this.messages, method = this.params.newMessagesFirst ? 'prepend' : 'append') {
+  renderMessages(
+    messagesToRender = this.messages,
+    method = this.params.newMessagesFirst ? 'prepend' : 'append',
+  ) {
     const m = this;
-    const html = messagesToRender.map(message => m.renderMessage(message)).join('');
+    const html = messagesToRender.map((message) => m.renderMessage(message)).join('');
     m.$el[method](html);
   }
 
@@ -191,7 +223,7 @@ class Messages extends Framework7Class {
 
   layout() {
     const m = this;
-    m.$el.find('.message, .messages-title').each((index, messageEl) => {
+    m.$el.find('.message, .messages-title').each((messageEl, index) => {
       const $messageEl = $(messageEl);
       if (!m.messages) {
         m.messages = m.getMessagesData();
@@ -230,7 +262,9 @@ class Messages extends Framework7Class {
           classes.push(customClass);
         });
       }
-      $messageEl.removeClass('message-first message-last message-tail message-same-name message-same-header message-same-footer message-same-avatar');
+      $messageEl.removeClass(
+        'message-first message-last message-tail message-same-name message-same-header message-same-footer message-same-avatar',
+      );
       classes.forEach((className) => {
         $messageEl.addClass(className);
       });
@@ -278,7 +312,7 @@ class Messages extends Framework7Class {
         m.removeMessage(messageToRemove, false);
       });
     } else {
-      $(messagesToRemove).each((index, messageToRemove) => {
+      $(messagesToRemove).each((messageToRemove) => {
         m.removeMessage(messageToRemove, false);
       });
     }
@@ -306,6 +340,24 @@ class Messages extends Framework7Class {
     return m.addMessages([messageToAdd], animate, method);
   }
 
+  setScrollData() {
+    const m = this;
+    // Define scroll positions before new messages added
+    const scrollHeightBefore = m.pageContentEl.scrollHeight;
+    const heightBefore = m.pageContentEl.offsetHeight;
+    const scrollBefore = m.pageContentEl.scrollTop;
+    m.scrollData = {
+      scrollHeightBefore,
+      heightBefore,
+      scrollBefore,
+    };
+    return {
+      scrollHeightBefore,
+      heightBefore,
+      scrollBefore,
+    };
+  }
+
   addMessages(...args) {
     const m = this;
     let messagesToAdd;
@@ -323,14 +375,11 @@ class Messages extends Framework7Class {
       method = m.params.newMessagesFirst ? 'prepend' : 'append';
     }
 
-    // Define scroll positions before new messages added
-    const scrollHeightBefore = m.pageContentEl.scrollHeight;
-    const heightBefore = m.pageContentEl.offsetHeight;
-    const scrollBefore = m.pageContentEl.scrollTop;
+    const { scrollHeightBefore, scrollBefore } = m.setScrollData();
 
     // Add message to DOM and data
     let messagesHTML = '';
-    const typingMessage = m.messages.filter(el => el.isTyping)[0];
+    const typingMessage = m.messages.filter((el) => el.isTyping)[0];
     messagesToAdd.forEach((messageToAdd) => {
       if (typingMessage) {
         if (method === 'append') {
@@ -366,22 +415,16 @@ class Messages extends Framework7Class {
     if (m.params.autoLayout) m.layout();
 
     if (method === 'prepend' && !typingMessage) {
-      m.pageContentEl.scrollTop = scrollBefore + (m.pageContentEl.scrollHeight - scrollHeightBefore);
+      m.pageContentEl.scrollTop =
+        scrollBefore + (m.pageContentEl.scrollHeight - scrollHeightBefore);
     }
 
-    if (m.params.scrollMessages && ((method === 'append' && !m.params.newMessagesFirst) || (method === 'prepend' && m.params.newMessagesFirst && !typingMessage))) {
-      if (m.params.scrollMessagesOnEdge) {
-        let onEdge = false;
-        if (m.params.newMessagesFirst && scrollBefore === 0) {
-          onEdge = true;
-        }
-        if (!m.params.newMessagesFirst && (scrollBefore - (scrollHeightBefore - heightBefore) >= -10)) {
-          onEdge = true;
-        }
-        if (onEdge) m.scroll(animate ? undefined : 0);
-      } else {
-        m.scroll(animate ? undefined : 0);
-      }
+    if (
+      m.params.scrollMessages &&
+      ((method === 'append' && !m.params.newMessagesFirst) ||
+        (method === 'prepend' && m.params.newMessagesFirst && !typingMessage))
+    ) {
+      m.scrollWithEdgeCheck(animate);
     }
 
     return m;
@@ -389,14 +432,19 @@ class Messages extends Framework7Class {
 
   showTyping(message = {}) {
     const m = this;
-    const typingMessage = m.messages.filter(el => el.isTyping)[0];
+    const typingMessage = m.messages.filter((el) => el.isTyping)[0];
     if (typingMessage) {
       m.removeMessage(m.messages.indexOf(typingMessage));
     }
-    m.addMessage(Utils.extend({
-      type: 'received',
-      isTyping: true,
-    }, message));
+    m.addMessage(
+      extend(
+        {
+          type: 'received',
+          isTyping: true,
+        },
+        message,
+      ),
+    );
     return m;
   }
 
@@ -422,13 +470,32 @@ class Messages extends Framework7Class {
     return m;
   }
 
+  scrollWithEdgeCheck(animate) {
+    const m = this;
+    const { scrollBefore, scrollHeightBefore, heightBefore } = m.scrollData;
+    if (m.params.scrollMessagesOnEdge) {
+      let onEdge = false;
+      if (m.params.newMessagesFirst && scrollBefore === 0) {
+        onEdge = true;
+      }
+      if (!m.params.newMessagesFirst && scrollBefore - (scrollHeightBefore - heightBefore) >= -10) {
+        onEdge = true;
+      }
+      if (onEdge) m.scroll(animate ? undefined : 0);
+    } else {
+      m.scroll(animate ? undefined : 0);
+    }
+  }
+
   scroll(duration = 300, scrollTop) {
     const m = this;
     const currentScroll = m.pageContentEl.scrollTop;
     let newScrollTop;
     if (typeof scrollTop !== 'undefined') newScrollTop = scrollTop;
     else {
-      newScrollTop = m.params.newMessagesFirst ? 0 : m.pageContentEl.scrollHeight - m.pageContentEl.offsetHeight;
+      newScrollTop = m.params.newMessagesFirst
+        ? 0
+        : m.pageContentEl.scrollHeight - m.pageContentEl.offsetHeight;
       if (newScrollTop === currentScroll) return m;
     }
     m.$pageContentEl.scrollTop(newScrollTop, duration);
@@ -450,12 +517,12 @@ class Messages extends Framework7Class {
   destroy() {
     const m = this;
     m.emit('local::beforeDestroy messagesBeforeDestroy', m);
-    m.$el.trigger('messages:beforedestroy', m);
+    m.$el.trigger('messages:beforedestroy');
     if (m.$el[0]) {
       m.$el[0].f7Messages = null;
       delete m.$el[0].f7Messages;
     }
-    Utils.deleteProps(m);
+    deleteProps(m);
   }
 }
 

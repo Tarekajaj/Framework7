@@ -1,5 +1,5 @@
-import Popup from './popup-class';
-import ModalMethods from '../../utils/modal-methods';
+import Popup from './popup-class.js';
+import ModalMethods from '../../shared/modal-methods.js';
 
 export default {
   name: 'popup',
@@ -7,10 +7,13 @@ export default {
     popup: {
       backdrop: true,
       backdropEl: undefined,
+      backdropUnique: false,
       closeByBackdropClick: true,
       closeOnEscape: false,
       swipeToClose: false,
       swipeHandler: null,
+      push: false,
+      containerEl: null,
     },
   },
   static: {
@@ -22,16 +25,17 @@ export default {
       app,
       constructor: Popup,
       defaultSelector: '.popup.modal-in',
+      parentSelector: '.popup',
     });
   },
   clicks: {
     '.popup-open': function openPopup($clickedEl, data = {}) {
       const app = this;
-      app.popup.open(data.popup, data.animate);
+      app.popup.open(data.popup, data.animate, $clickedEl);
     },
     '.popup-close': function closePopup($clickedEl, data = {}) {
       const app = this;
-      app.popup.close(data.popup, data.animate);
+      app.popup.close(data.popup, data.animate, $clickedEl);
     },
   },
 };

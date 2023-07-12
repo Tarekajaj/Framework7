@@ -2,79 +2,174 @@
 /* eslint no-console: "off" */
 /* eslint global-require: "off" */
 /* eslint no-param-reassign: ["error", { "props": false }] */
-
+const exec = require('exec-sh');
 const path = require('path');
-const rollup = require('rollup');
-const buble = require('rollup-plugin-buble');
-const replace = require('rollup-plugin-replace');
-const resolve = require('rollup-plugin-node-resolve');
-const Terser = require('terser');
-const commonjs = require('rollup-plugin-commonjs');
+const { rollup } = require('rollup');
+const replace = require('@rollup/plugin-replace');
+const { default: babel } = require('@rollup/plugin-babel');
+const { nodeResolve } = require('@rollup/plugin-node-resolve');
+const { minify } = require('terser');
+const commonjs = require('@rollup/plugin-commonjs');
 const getConfig = require('./get-core-config.js');
 const banner = require('./banners/core.js');
 const getOutput = require('./get-output.js');
-const fs = require('./utils/fs-extra');
+const fs = require('./utils/fs-extra.js');
 
 let cache;
+async function modular({ components }) {
+  const outputDir = path.resolve(`${getOutput()}`, 'core');
+  await exec.promise(
+    `npx cross-env MODULES=esm npx babel src/core --out-dir ${outputDir} --ignore "src/core/icons/**/*.*","src/core/less/*.js","src/core/*.js"`,
+  );
+  const removeUMD = (content) => {
+    return `${content.split('// UMD_ONLY_START')[0]}${content.split('// UMD_ONLY_END')[1] || ''}`;
+  };
+  const coreSrc = fs.readFileSync(path.resolve(__dirname, '../src/core/framework7.js'), 'utf-8');
+  const liteSrc = fs.readFileSync(
+    path.resolve(__dirname, '../src/core/framework7-lite.js'),
+    'utf-8',
+  );
 
-function es(components, cb) {
-  const config = getConfig();
-  const env = process.env.NODE_ENV || 'development';
-  const target = process.env.TARGET || config.target || 'universal';
-  const format = 'es';
-  const output = path.resolve(`${getOutput()}`, 'core');
-  const esContent = fs.readFileSync(path.resolve(__dirname, '../src/core/framework7.js'));
+  const coreComponents = (content, isLite) => {
+    return removeUMD(content)
+      .replace('//IMPORT_COMPONENTS\n', '')
+      .replace('//INSTALL_COMPONENTS\n', '')
+      .replace(
+        '//IMPORT_HELPERS',
+        "import * as utils from './shared/utils.js';\nimport { getSupport } from './shared/get-support.js';\nimport { getDevice } from './shared/get-device.js';",
+      )
+      .replace(
+        '//NAMED_EXPORT',
+        `export { ${
+          isLite ? '' : 'Component, $jsx,'
+        } $ as Dom7, utils, getDevice, getSupport, createStore };`,
+      );
+  };
+  const bundleComponents = (content, isLite) => {
+    const comps = [...components];
+    if (isLite) {
+      const exclude = ['gauge', 'area-chart', 'pie-chart'];
+      for (let i = comps.length - 1; i >= 0; i -= 1) {
+        if (exclude.includes(comps[i].name)) {
+          comps.splice(i, 1);
+        }
+      }
+    }
+    return removeUMD(content)
+      .replace(
+        '//IMPORT_COMPONENTS',
+        comps
+          .map(
+            (component) =>
+              `import ${component.capitalized} from './components/${component.name}/${component.name}.js';`,
+          )
+          .join('\n'),
+      )
+      .replace(
+        '//INSTALL_COMPONENTS',
+        comps.map((component) => component.capitalized).join(',\n  '),
+      )
+      .replace(
+        '//IMPORT_HELPERS',
+        "import * as utils from './shared/utils.js';\nimport { getSupport } from './shared/get-support.js';\nimport { getDevice } from './shared/get-device.js';",
+      )
+      .replace(
+        '//NAMED_EXPORT',
+        `export { ${
+          isLite ? '' : 'Component, $jsx,'
+        } $ as Dom7, utils, getDevice, getSupport, createStore };`,
+      );
+  };
 
-  // Bundle
-  const bundleContent = esContent
-    .replace('process.env.NODE_ENV', JSON.stringify(env))
-    .replace('process.env.TARGET', JSON.stringify(target))
-    .replace('process.env.FORMAT', JSON.stringify(format))
-    .replace('//IMPORT_COMPONENTS', components.map(component => `import ${component.capitalized} from './components/${component.name}/${component.name}';`).join('\n'))
-    .replace('//INSTALL_COMPONENTS', components.map(component => component.capitalized).join(',\n  '))
-    .replace('//ES_IMPORT_HELPERS', "import Request from './utils/request';\nimport Utils from './utils/utils';\nimport Support from './utils/support';\nimport Device from './utils/device';")
-    .replace('//NAMED_ES_EXPORT', 'export { Template7, $ as Dom7, Request, Utils, Device, Support };');
+  const coreContent = coreComponents(coreSrc);
+  const bundleContent = bundleComponents(coreSrc);
+  const liteContent = coreComponents(liteSrc, true);
+  const liteBundleContent = bundleComponents(liteSrc, true);
 
-  // Core
-  const coreContent = esContent
-    .replace('process.env.NODE_ENV', JSON.stringify(env))
-    .replace('process.env.TARGET', JSON.stringify(target))
-    .replace('process.env.FORMAT', JSON.stringify(format))
-    .replace('//IMPORT_COMPONENTS\n', '')
-    .replace('//INSTALL_COMPONENTS\n', '')
-    .replace('//ES_IMPORT_HELPERS', "import Request from './utils/request';\nimport Utils from './utils/utils';\nimport Support from './utils/support';\nimport Device from './utils/device';")
-    .replace('//NAMED_ES_EXPORT', 'export { Template7, $ as Dom7, Request, Utils, Device, Support };');
+  // Save core
+  fs.writeFileSync(`${outputDir}/framework7.esm.js`, coreContent);
+  // Save bundle
+  fs.writeFileSync(`${outputDir}/framework7-bundle.esm.js`, bundleContent);
 
-  // Save
-  fs.writeFileSync(`${output}/framework7.esm.bundle.js`, `${banner}\n${bundleContent}`);
-  fs.writeFileSync(`${output}/framework7.esm.js`, `${banner}\n${coreContent}`);
+  // Save lite
+  fs.writeFileSync(`${outputDir}/framework7-lite.esm.js`, liteContent);
+  // Save lite bundle
+  fs.writeFileSync(`${outputDir}/framework7-lite-bundle.esm.js`, liteBundleContent);
 
-  if (cb) cb();
+  const files = [
+    'framework7.esm.js',
+    'framework7-bundle.esm.js',
+    'framework7-lite.esm.js',
+    'framework7-lite-bundle.esm.js',
+  ];
+
+  // eslint-disable-next-line
+  for (let fileName of files) {
+    // eslint-disable-next-line
+    await exec.promise(
+      `npx cross-env MODULES=esm npx babel ${outputDir}/${fileName} --out-file ${outputDir}/${fileName}`,
+    );
+  }
+
+  // update swipers
+  const swiperContent = fs.readFileSync(`${outputDir}/components/swiper/swiper.js`, 'utf-8');
+  fs.writeFileSync(`${outputDir}/components/swiper/swiper.js`, removeUMD(swiperContent));
+
+  // add banners
+  files.forEach((fileName) => {
+    const fileContentt = fs.readFileSync(`${outputDir}/${fileName}`, 'utf-8');
+    fs.writeFileSync(`${outputDir}/${fileName}`, `${banner}\n${fileContentt}`);
+  });
+
+  // update package.json
+  if (process.env.NODE_ENV === 'production') {
+    // eslint-disable-next-line
+    const targetPkg = require(`${outputDir}/package.json`);
+    Object.keys(targetPkg.exports).forEach((key) => {
+      if (key[0] === './components/') delete targetPkg.exports[key];
+    });
+    components.forEach((c) => {
+      targetPkg.exports[`./components/${c.name}`] = `./components/${c.name}/${c.name}.js`;
+      targetPkg.exports[`./components/${c.name}/less`] = `./components/${c.name}/${c.name}.less`;
+      targetPkg.exports[`./components/${c.name}/css`] = `./components/${c.name}/${c.name}.css`;
+      // eslint-disable-next-line
+      targetPkg.exports[
+        `./components/${c.name}/css/rtl`
+      ] = `./components/${c.name}/${c.name}-rtl.css`;
+    });
+    fs.writeFileSync(`${outputDir}/package.json`, `${JSON.stringify(targetPkg, '', 2)}\n`);
+  }
 }
-function umdBundle(components, cb) {
+
+async function umdBundle({ components } = {}) {
   const config = getConfig();
   const env = process.env.NODE_ENV || 'development';
-  const target = process.env.TARGET || config.target || 'universal';
   const format = process.env.FORMAT || config.format || 'umd';
   const output = path.resolve(`${getOutput()}`, 'core');
 
-  rollup.rollup({
+  return rollup({
     input: './src/core/framework7.js',
     cache,
+    treeshake: false,
     plugins: [
       replace({
         delimiters: ['', ''],
         'process.env.NODE_ENV': JSON.stringify(env), // or 'production'
-        'process.env.TARGET': JSON.stringify(target),
         'process.env.FORMAT': JSON.stringify(format),
-        '//IMPORT_COMPONENTS': components.map(component => `import ${component.capitalized} from './components/${component.name}/${component.name}';`).join('\n'),
-        '//INSTALL_COMPONENTS': components.map(component => component.capitalized).join(',\n  '),
-        '//ES_IMPORT_HELPERS': '',
-        '//NAMED_ES_EXPORT': '',
+        '//IMPORT_COMPONENTS': components
+          .map(
+            (component) =>
+              `import ${component.capitalized} from './components/${component.name}/${component.name}.js';`,
+          )
+          .join('\n'),
+        '//INSTALL_COMPONENTS': components.map((component) => component.capitalized).join(',\n  '),
+        '//IMPORT_HELPERS': '',
+        '//NAMED_EXPORT': '',
+        'export { $ as Dom7, utils, getDevice, getSupport, createStore, $jsx };': '',
       }),
-      resolve({ mainFields: ['module', 'main', 'jsnext'] }),
+      nodeResolve({ mainFields: ['module', 'main', 'jsnext'] }),
+      babel({ babelHelpers: 'bundled' }),
       commonjs(),
-      buble(),
     ],
     onwarn(warning, warn) {
       const ignore = ['EVAL'];
@@ -83,143 +178,76 @@ function umdBundle(components, cb) {
       }
       warn(warning);
     },
-  }).then((bundle) => {
-    cache = bundle;
-    return bundle.write({
-      strict: true,
-      file: `${output}/js/framework7.bundle.js`,
-      format: 'umd',
-      name: 'Framework7',
-      sourcemap: env === 'development',
-      sourcemapFile: `${output}/js/framework7.bundle.js.map`,
-      banner,
-    });
-  }).then((bundle) => {
-    if (env === 'development') {
-      if (cb) cb();
-      return;
-    }
-    const result = bundle.output[0];
-    const minified = Terser.minify(result.code, {
-      sourceMap: {
-        content: env === 'development' ? result.map : undefined,
-        filename: env === 'development' ? undefined : 'framework7.bundle.min.js',
-        url: 'framework7.bundle.min.js.map',
-      },
-      output: {
-        preamble: banner,
-      },
-    });
-
-    fs.writeFileSync(`${output}/js/framework7.bundle.min.js`, minified.code);
-    fs.writeFileSync(`${output}/js/framework7.bundle.min.js.map`, minified.map);
-
-    cb();
-  }).catch((err) => {
-    if (cb) cb();
-    console.log(err.toString());
-  });
-}
-
-function umdCore(cb) {
-  const config = getConfig();
-  const env = process.env.NODE_ENV || 'development';
-  const target = process.env.TARGET || config.target || 'universal';
-  const format = process.env.FORMAT || config.format || 'umd';
-  const output = path.resolve(`${getOutput()}`, 'core');
-
-  rollup.rollup({
-    input: './src/core/framework7.js',
-    plugins: [
-      replace({
-        delimiters: ['', ''],
-        'process.env.NODE_ENV': JSON.stringify(env), // or 'production'
-        'process.env.TARGET': JSON.stringify(target),
-        'process.env.FORMAT': JSON.stringify(format),
-        '//IMPORT_COMPONENTS': '',
-        '//INSTALL_COMPONENTS': '',
-        '//ES_IMPORT_HELPERS': '',
-        '//NAMED_ES_EXPORT': '',
-      }),
-      resolve({ mainFields: ['module', 'main', 'jsnext'] }),
-      commonjs(),
-      buble(),
-    ],
-    onwarn(warning, warn) {
-      const ignore = ['EVAL'];
-      if (warning.code && ignore.indexOf(warning.code) >= 0) {
+  })
+    .then((bundle) => {
+      cache = bundle;
+      return bundle.write({
+        strict: true,
+        file: `${output}/framework7-bundle.js`,
+        format: 'umd',
+        name: 'Framework7',
+        sourcemap: env === 'production',
+        sourcemapFile: `${output}/framework7-bundle.js.map`,
+        banner,
+      });
+    })
+    .then(async (bundle) => {
+      if (env === 'development') {
         return;
       }
-      warn(warning);
-    },
-  }).then((bundle) => { // eslint-disable-line
-    return bundle.write({
-      strict: true,
-      file: `${output}/js/framework7.js`,
-      format: 'umd',
-      name: 'Framework7',
-      sourcemap: false,
-      banner,
-    });
-  }).then((bundle) => {
-    if (env === 'development') {
-      if (cb) cb();
-      return;
-    }
-    const result = bundle.output[0];
-    const minified = Terser.minify(result.code, {
-      sourceMap: {
-        filename: 'framework7.min.js',
-        url: 'framework7.min.js.map',
-      },
-      output: {
-        preamble: banner,
-      },
-    });
+      const result = bundle.output[0];
+      const minified = await minify(result.code, {
+        sourceMap: {
+          content: env === 'production' ? result.map : undefined,
+          filename: env === 'production' ? 'framework7-bundle.min.js' : undefined,
+          url: `framework7-bundle.min.js.map`,
+        },
+        output: {
+          preamble: banner,
+        },
+      });
 
-    fs.writeFileSync(`${output}/js/framework7.min.js`, minified.code);
-    fs.writeFileSync(`${output}/js/framework7.min.js.map`, minified.map);
-
-    cb();
-  }).catch((err) => {
-    if (cb) cb();
-    console.log(err.toString());
-  });
+      fs.writeFileSync(`${output}/framework7-bundle.min.js`, minified.code);
+      fs.writeFileSync(`${output}/framework7-bundle.min.js.map`, minified.map);
+    })
+    .catch((err) => {
+      console.log(err);
+    });
 }
 
-function buildJs(cb) {
+async function buildJs(cb) {
   const config = getConfig();
 
   const components = [];
   config.components.forEach((name) => {
     // eslint-disable-next-line
-    const capitalized = name.split('-').map((word) => {
-      return word.split('').map((char, index) => {
-        if (index === 0) return char.toUpperCase();
-        return char;
-      }).join('');
-    }).join('');
+    const capitalized = name
+      .split('-')
+      .map((word) => {
+        return word
+          .split('')
+          .map((char, index) => {
+            if (index === 0) return char.toUpperCase();
+            return char;
+          })
+          .join('');
+      })
+      .join('');
     const jsFilePath = `./src/core/components/${name}/${name}.js`;
     if (fs.existsSync(jsFilePath)) {
       components.push({ name, capitalized });
     }
   });
 
-  const expectCbs = 3;
-  let cbs = 0;
+  if (!process.env.CORE_BUILD_ONLY_UMD) {
+    await modular({ components });
+  }
 
-  umdCore(() => {
-    cbs += 1;
-    if (cbs === expectCbs) cb();
-  });
-  umdBundle(components, () => {
-    cbs += 1;
-    if (cbs === expectCbs) cb();
-  });
-  es(components, () => {
-    cbs += 1;
-    if (cbs === expectCbs) cb();
-  });
+  if (!process.env.CORE_BUILD_ONLY_MODULES) {
+    await umdBundle({ components });
+  }
+
+  cb();
 }
 
 module.exports = buildJs;

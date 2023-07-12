@@ -1,4 +1,9 @@
 /* === Icon === */
+.f7-icons,
+.material-icons {
+  width: 1em;
+  height: 1em;
+}
 i.icon {
   display: inline-block;
   vertical-align: middle;
@@ -16,16 +21,13 @@ i.icon {
     .core-icons-font();
   }
 }
-.icon[class*="color-"] {
+.icon[class*='color-'] {
   color: var(--f7-theme-color);
 }
 
 .if-ios-theme({
-  @import url('./icon-ios.less');
+  @import './icon-ios.less';
 });
 .if-md-theme({
-  @import url('./icon-md.less');
-});
-.if-aurora-theme({
-  @import url('./icon-aurora.less');
+  @import './icon-md.less';
 });

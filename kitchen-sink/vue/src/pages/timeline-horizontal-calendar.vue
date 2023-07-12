@@ -1,7 +1,7 @@
 <template>
   <f7-page>
-    <f7-navbar no-shadow title="Horizontal Timeline Calendar" back-link="Back"></f7-navbar>
-    <div class="timeline timeline-horizontal col-33 tablet-15">
+    <f7-navbar title="Horizontal Timeline Calendar" back-link="Back"></f7-navbar>
+    <div class="timeline timeline-horizontal timeline-cols-3 medium-timeline-cols-6">
       <div class="timeline-year">
         <div class="timeline-year-title"><span>2016</span></div>
         <div class="timeline-month">
@@ -748,13 +748,12 @@
   </f7-page>
 </template>
 <script>
-  import { f7Navbar, f7Page, f7BlockTitle } from 'framework7-vue';
+import { f7Navbar, f7Page } from 'framework7-vue';
 
-  export default {
-    components: {
-      f7Navbar,
-      f7Page,
-      f7BlockTitle,
-    },
-  };
+export default {
+  components: {
+    f7Navbar,
+    f7Page,
+  },
+};
 </script>

@@ -1,5 +1,5 @@
-import $ from 'dom7';
-import Utils from '../../utils/utils';
+import $ from '../../shared/dom7.js';
+import { bindMethods } from '../../shared/utils.js';
 
 const Progressbar = {
   set(...args) {
@@ -7,12 +7,12 @@ const Progressbar = {
     let [el, progress, duration] = args;
     if (typeof args[0] === 'number') {
       [progress, duration] = args;
-      el = app.root;
+      el = app.$el;
     }
     if (typeof progress === 'undefined' || progress === null) return el;
     if (!progress) progress = 0;
 
-    const $el = $(el || app.root);
+    const $el = $(el || app.$el);
     if ($el.length === 0) {
       return el;
     }
@@ -32,7 +32,7 @@ const Progressbar = {
     }
     $progressbarLine
       .transition(typeof duration !== 'undefined' ? duration : '')
-      .transform(`translate3d(${(-100 + progressNormalized)}%,0,0)`);
+      .transform(`translate3d(${(-100 + progressNormalized) * (app.rtl ? -1 : 1)}%,0,0)`);
 
     return $progressbarEl[0];
   },
@@ -44,27 +44,30 @@ const Progressbar = {
     let type = 'determined';
 
     if (args.length === 2) {
-      if ((typeof args[0] === 'string' || typeof args[0] === 'object') && typeof args[1] === 'string') {
+      if (
+        (typeof args[0] === 'string' || typeof args[0] === 'object') &&
+        typeof args[1] === 'string'
+      ) {
         // '.page', 'multi'
         [el, color, progress] = args;
         type = 'infinite';
       } else if (typeof args[0] === 'number' && typeof args[1] === 'string') {
         // 50, 'multi'
         [progress, color] = args;
-        el = app.root;
+        el = app.$el;
       }
     } else if (args.length === 1) {
       if (typeof args[0] === 'number') {
-        el = app.root;
+        el = app.$el;
         progress = args[0];
       } else if (typeof args[0] === 'string') {
         type = 'infinite';
-        el = app.root;
+        el = app.$el;
         color = args[0];
       }
     } else if (args.length === 0) {
       type = 'infinite';
-      el = app.root;
+      el = app.$el;
     }
 
     const $el = $(el);
@@ -74,10 +77,14 @@ const Progressbar = {
     if ($el.hasClass('progressbar') || $el.hasClass('progressbar-infinite')) {
       $progressbarEl = $el;
     } else {
-      $progressbarEl = $el.children('.progressbar:not(.progressbar-out), .progressbar-infinite:not(.progressbar-out)');
+      $progressbarEl = $el.children(
+        '.progressbar:not(.progressbar-out), .progressbar-infinite:not(.progressbar-out)',
+      );
       if ($progressbarEl.length === 0) {
         $progressbarEl = $(`
-          <span class="progressbar${type === 'infinite' ? '-infinite' : ''}${color ? ` color-${color}` : ''} progressbar-in">
+          <span class="progressbar${type === 'infinite' ? '-infinite' : ''}${
+          color ? ` color-${color}` : ''
+        } progressbar-in">
             ${type === 'infinite' ? '' : '<span></span>'}
           </span>`);
         $el.append($progressbarEl);
@@ -92,7 +99,7 @@ const Progressbar = {
   },
   hide(el, removeAfterHide = true) {
     const app = this;
-    const $el = $(el || app.root);
+    const $el = $(el || app.$el);
     if ($el.length === 0) return undefined;
     let $progressbarEl;
     if ($el.hasClass('progressbar') || $el.hasClass('progressbar-infinite')) {
@@ -100,7 +107,11 @@ const Progressbar = {
     } else {
       $progressbarEl = $el.children('.progressbar, .progressbar-infinite');
     }
-    if ($progressbarEl.length === 0 || !$progressbarEl.hasClass('progressbar-in') || $progressbarEl.hasClass('progressbar-out')) {
+    if (
+      $progressbarEl.length === 0 ||
+      !$progressbarEl.hasClass('progressbar-in') ||
+      $progressbarEl.hasClass('progressbar-out')
+    ) {
       return $progressbarEl;
     }
     $progressbarEl
@@ -119,18 +130,23 @@ export default {
   name: 'progressbar',
   create() {
     const app = this;
-    Utils.extend(app, {
-      progressbar: {
-        set: Progressbar.set.bind(app),
-        show: Progressbar.show.bind(app),
-        hide: Progressbar.hide.bind(app),
-      },
+    bindMethods(app, {
+      progressbar: Progressbar,
     });
   },
   on: {
+    tabMounted(tabEl) {
+      const app = this;
+      $(tabEl)
+        .find('.progressbar')
+        .each((progressbarEl) => {
+          const $progressbarEl = $(progressbarEl);
+          app.progressbar.set($progressbarEl, $progressbarEl.attr('data-progress'));
+        });
+    },
     pageInit(page) {
       const app = this;
-      page.$el.find('.progressbar').each((index, progressbarEl) => {
+      page.$el.find('.progressbar').each((progressbarEl) => {
         const $progressbarEl = $(progressbarEl);
         app.progressbar.set($progressbarEl, $progressbarEl.attr('data-progress'));
       });

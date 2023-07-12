@@ -1,6 +1,6 @@
-import $ from 'dom7';
-import ConstructorMethods from '../../utils/constructor-methods';
-import Calendar from './calendar-class';
+import ConstructorMethods from '../../shared/constructor-methods.js';
+import Calendar from './calendar-class.js';
+import $ from '../../shared/dom7.js';
 
 export default {
   name: 'calendar',
@@ -26,26 +26,18 @@ export default {
   params: {
     calendar: {
       // Calendar settings
-      calendarType: 'gregorian', // or 'jalali'
-      monthNames: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
-      monthNamesShort: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-      dayNames: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
-      dayNamesShort: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+      dateFormat: undefined,
+      monthNames: 'auto',
+      monthNamesShort: 'auto',
+      dayNames: 'auto',
+      dayNamesShort: 'auto',
+      locale: undefined,
       firstDay: 1, // First day of the week, Monday
       weekendDays: [0, 6], // Sunday and Saturday
-      jalali: {
-        monthNames: ['فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور', 'مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'اسفند'],
-        monthNamesShort: ['فَر', 'اُر', 'خُر', 'تیر', 'مُر', 'شَه', 'مهر', 'آب', 'آذر', 'دی', 'بَه', 'اِس'],
-        dayNames: ['یک‌شنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنج‌شنبه', 'جمعه', 'شنبه'],
-        dayNamesShort: ['1ش', '۲ش', '۳ش', '۴ش', '۵ش', 'ج', 'ش'],
-        firstDay: 6, // Saturday
-        weekendDays: [5], // Friday
-      },
       multiple: false,
       rangePicker: false,
       rangePickerMinDays: 1, // when calendar is used as rangePicker
       rangePickerMaxDays: 0, // when calendar is used as rangePicker, 0 means unlimited
-      dateFormat: 'yyyy-mm-dd',
       direction: 'horizontal', // or 'vertical'
       minDate: null,
       maxDate: null,
@@ -56,12 +48,28 @@ export default {
       animate: true,
       closeOnSelect: false,
       monthSelector: true,
+      monthPicker: true,
+      monthPickerToolbar: true,
+      monthPickerCloseText: 'Done',
       yearSelector: true,
+      yearPicker: true,
+      yearPickerToolbar: true,
+      yearPickerMin: undefined,
+      yearPickerMax: undefined,
+      yearPickerCloseText: 'Done',
+      timePicker: false,
+      timePickerToolbar: true,
+      timePickerLabel: 'Time',
+      timePickerFormat: { hour: 'numeric', minute: 'numeric' },
+      timePickerPlaceholder: 'Select time',
+      timePickerCloseText: 'Done',
       weekHeader: true,
       value: null,
       // Common opener settings
       containerEl: null,
       openIn: 'auto', // or 'popover' or 'sheet' or 'customModal'
+      sheetPush: false,
+      sheetSwipeToClose: undefined,
       formatValue: null,
       inputEl: null,
       inputReadOnly: true,
@@ -69,11 +77,11 @@ export default {
       scrollToInput: true,
       header: false,
       headerPlaceholder: 'Select date',
-      footer: false,
       toolbar: true,
       toolbarCloseText: 'Done',
+      footer: false,
       cssClass: null,
-      routableModals: true,
+      routableModals: false,
       view: null,
       url: 'date/',
       backdrop: null,

@@ -1,13 +1,13 @@
-import $ from 'dom7';
-import Utils from '../../utils/utils';
-import PullToRefresh from './pull-to-refresh-class';
-import ConstructorMethods from '../../utils/constructor-methods';
+import $ from '../../shared/dom7.js';
+import { extend } from '../../shared/utils.js';
+import PullToRefresh from './pull-to-refresh-class.js';
+import ConstructorMethods from '../../shared/constructor-methods.js';
 
 export default {
   name: 'pullToRefresh',
   create() {
     const app = this;
-    app.ptr = Utils.extend(
+    app.ptr = extend(
       ConstructorMethods({
         defaultSelector: '.ptr-content',
         constructor: PullToRefresh,
@@ -25,7 +25,7 @@ export default {
           if (ptr) return ptr.refresh();
           return undefined;
         },
-      }
+      },
     );
   },
   static: {
@@ -35,26 +35,30 @@ export default {
     tabMounted(tabEl) {
       const app = this;
       const $tabEl = $(tabEl);
-      $tabEl.find('.ptr-content').each((index, el) => {
+      const $ptrEls = $tabEl.find('.ptr-content');
+      if ($tabEl.is('.ptr-content')) $ptrEls.add($tabEl);
+      $ptrEls.each((el) => {
         app.ptr.create(el);
       });
     },
     tabBeforeRemove(tabEl) {
       const $tabEl = $(tabEl);
       const app = this;
-      $tabEl.find('.ptr-content').each((index, el) => {
+      const $ptrEls = $tabEl.find('.ptr-content');
+      if ($tabEl.is('.ptr-content')) $ptrEls.add($tabEl);
+      $ptrEls.each((el) => {
         app.ptr.destroy(el);
       });
     },
     pageInit(page) {
       const app = this;
-      page.$el.find('.ptr-content').each((index, el) => {
+      page.$el.find('.ptr-content').each((el) => {
         app.ptr.create(el);
       });
     },
     pageBeforeRemove(page) {
       const app = this;
-      page.$el.find('.ptr-content').each((index, el) => {
+      page.$el.find('.ptr-content').each((el) => {
         app.ptr.destroy(el);
       });
     },

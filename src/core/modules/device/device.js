@@ -1,52 +1,46 @@
-import { document } from 'ssr-window';
-import Device from '../../utils/device';
+import { getDocument } from 'ssr-window';
+import { getDevice } from '../../shared/get-device.js';
 
 export default {
   name: 'device',
-  proto: {
-    device: Device,
-  },
   static: {
-    device: Device,
+    getDevice,
   },
   on: {
     init() {
+      const document = getDocument();
+      const device = getDevice();
       const classNames = [];
       const html = document.querySelector('html');
-      const metaStatusbar = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
+      const metaStatusbar = document.querySelector(
+        'meta[name="apple-mobile-web-app-status-bar-style"]',
+      );
       if (!html) return;
-      if (Device.standalone && Device.ios && metaStatusbar && metaStatusbar.content === 'black-translucent') {
+      if (
+        device.standalone &&
+        device.ios &&
+        metaStatusbar &&
+        metaStatusbar.content === 'black-translucent'
+      ) {
         classNames.push('device-full-viewport');
       }
 
       // Pixel Ratio
-      classNames.push(`device-pixel-ratio-${Math.floor(Device.pixelRatio)}`);
-      if (Device.pixelRatio >= 2) {
-        classNames.push('device-retina');
-      }
+      classNames.push(`device-pixel-ratio-${Math.floor(device.pixelRatio)}`);
       // OS classes
-      if (Device.os) {
-        classNames.push(
-          `device-${Device.os}`,
-          `device-${Device.os}-${Device.osVersion.split('.')[0]}`,
-          `device-${Device.os}-${Device.osVersion.replace(/\./g, '-')}`
-        );
-        if (Device.os === 'ios') {
-          const major = parseInt(Device.osVersion.split('.')[0], 10);
-          for (let i = major - 1; i >= 6; i -= 1) {
-            classNames.push(`device-ios-gt-${i}`);
-          }
-          if (Device.iphoneX) {
-            classNames.push('device-iphone-x');
-          }
-        }
-      } else if (Device.desktop) {
+      if (device.os && !device.desktop) {
+        classNames.push(`device-${device.os}`);
+      } else if (device.desktop) {
         classNames.push('device-desktop');
-        if (Device.macos) classNames.push('device-macos');
-        else if (Device.windows) classNames.push('device-windows');
+        if (device.os) {
+          classNames.push(`device-${device.os}`);
+        }
       }
-      if (Device.cordova || Device.phonegap) {
+      if (device.cordova) {
         classNames.push('device-cordova');
+      }
+      if (device.capacitor) {
+        classNames.push('device-capacitor');
       }
 
       // Add html classes

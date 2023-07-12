@@ -1,20 +1,32 @@
 /* eslint no-param-reassign: "off" */
-import $ from 'dom7';
-import Utils from '../../utils/utils';
-import Support from '../../utils/support';
+import { getDocument } from 'ssr-window';
+import { bindMethods } from '../../shared/utils.js';
+import { getSupport } from '../../shared/get-support.js';
+import { getDevice } from '../../shared/get-device.js';
+import $ from '../../shared/dom7.js';
 
 const CardExpandable = {
   open(cardEl = '.card-expandable', animate = true) {
     const app = this;
+    const device = getDevice();
+    const document = getDocument();
+    const support = getSupport();
 
-    if ($('.card-opened').length) return;
     const $cardEl = $(cardEl).eq(0);
-
     if (!$cardEl || !$cardEl.length) return;
-    if ($cardEl.hasClass('card-opened') || $cardEl.hasClass('card-opening') || $cardEl.hasClass('card-closing')) return;
+    if (
+      $cardEl.hasClass('card-opened') ||
+      $cardEl.hasClass('card-opening') ||
+      $cardEl.hasClass('card-closing')
+    )
+      return;
 
     const $pageEl = $cardEl.parents('.page').eq(0);
     if (!$pageEl.length) return;
+
+    if ($pageEl.find('.card-opened').length) {
+      return;
+    }
 
     let prevented;
 
@@ -79,11 +91,23 @@ const CardExpandable = {
     let maxWidth = $cardSizeEl[0].offsetWidth || pageWidth;
     let maxHeight = $cardSizeEl[0].offsetHeight || pageHeight;
 
+    let statusbarHeight;
+    if ($navbarEl && !cardParams.hideStatusbarOnOpen && maxHeight === pageHeight) {
+      statusbarHeight = parseInt($navbarEl.css('--f7-safe-area-top'), 10);
+      if (Number.isNaN(statusbarHeight)) statusbarHeight = 0;
+    }
+    if (statusbarHeight) {
+      maxHeight -= statusbarHeight;
+    }
+
     let scaleX = maxWidth / cardWidth;
     let scaleY = maxHeight / cardHeight;
 
     let offset = $cardEl.offset();
     let pageOffset = $pageEl.offset();
+    if (statusbarHeight) {
+      pageOffset.top += statusbarHeight / 2;
+    }
     offset.left -= pageOffset.left;
 
     let cardLeftOffset;
@@ -93,15 +117,16 @@ const CardExpandable = {
       const transformValues = currTransform
         .replace(/matrix\(|\)/g, '')
         .split(',')
-        .map(el => el.trim());
+        .map((el) => el.trim());
       if (transformValues && transformValues.length > 1) {
         const scale = parseFloat(transformValues[0]);
-        cardLeftOffset = offset.left - cardWidth * (1 - scale) / 2;
-        cardTopOffset = offset.top - pageOffset.top - cardHeight * (1 - scale) / 2;
+        cardLeftOffset = offset.left - (cardWidth * (1 - scale)) / 2;
+        cardTopOffset = offset.top - pageOffset.top - (cardHeight * (1 - scale)) / 2;
         if (app.rtl) cardLeftOffset -= $cardEl[0].scrollLeft;
       } else {
         cardLeftOffset = $cardEl[0].offsetLeft;
-        cardTopOffset = $cardEl[0].offsetTop - ($pageContentEl.length ? $pageContentEl[0].scrollTop : 0);
+        cardTopOffset =
+          $cardEl[0].offsetTop - ($pageContentEl.length ? $pageContentEl[0].scrollTop : 0);
       }
     } else {
       cardLeftOffset = offset.left;
@@ -120,10 +145,22 @@ const CardExpandable = {
     let translateX = (cardRightOffset - cardLeftOffset) / 2;
     let translateY = (cardBottomOffset - cardTopOffset) / 2;
     if (cardParams.hideNavbarOnOpen && $navbarEl && $navbarEl.length) {
-      app.navbar.hide($navbarEl, cardParams.animate);
+      if ($navbarEl.closest('.navbar-hidden').length) {
+        // Was hidden
+        $cardEl[0].f7KeepNavbarOnClose = true;
+      } else {
+        delete $cardEl[0].f7KeepNavbarOnClose;
+        app.navbar.hide($navbarEl, cardParams.animate, cardParams.hideStatusbarOnOpen, true);
+      }
     }
     if (cardParams.hideToolbarOnOpen && $toolbarEl && $toolbarEl.length) {
-      app.toolbar.hide($toolbarEl, cardParams.animate);
+      if ($toolbarEl.closest('.toolbar-hidden').length) {
+        // Was hidden
+        $cardEl[0].f7KeepToolbarOnClose = true;
+      } else {
+        delete $cardEl[0].f7KeepToolbarOnClose;
+        app.toolbar.hide($toolbarEl, cardParams.animate);
+      }
     }
     if ($backdropEl) {
       $backdropEl.removeClass('card-backdrop-out').addClass('card-backdrop-in');
@@ -136,7 +173,7 @@ const CardExpandable = {
     app.emit('cardOpen', $cardEl[0]);
     function transitionEnd() {
       $pageEl.addClass('page-with-card-opened');
-      if (app.device.ios && $pageContentEl.length) {
+      if (device.ios && $pageContentEl.length) {
         $pageContentEl.css('height', `${$pageContentEl[0].offsetHeight + 1}px`);
         setTimeout(() => {
           $pageContentEl.css('height', '');
@@ -152,10 +189,17 @@ const CardExpandable = {
         width: `${maxWidth}px`,
         height: `${maxHeight}px`,
       })
-      .transform(`translate3d(${app.rtl ? (cardLeftOffset + translateX) : (-cardLeftOffset - translateX)}px, 0px, 0) scale(${1 / scaleX}, ${1 / scaleY})`);
+      .transform(
+        `translate3d(${
+          app.rtl ? cardLeftOffset + translateX : -cardLeftOffset - translateX
+        }px, 0px, 0) scale(${1 / scaleX}, ${1 / scaleY})`,
+      );
 
-    $cardEl
-      .transform(`translate3d(${translateX}px, ${translateY}px, 0) scale(${scaleX}, ${scaleY})`);
+    $cardEl.transform(
+      `translate3d(${
+        app.rtl ? -translateX : translateX
+      }px, ${translateY}px, 0) scale(${scaleX}, ${scaleY})`,
+    );
     if (cardParams.animate) {
       $cardEl.transitionEnd(() => {
         transitionEnd();
@@ -173,12 +217,24 @@ const CardExpandable = {
       maxWidth = $cardSizeEl[0].offsetWidth || pageWidth;
       maxHeight = $cardSizeEl[0].offsetHeight || pageHeight;
 
+      statusbarHeight = 0;
+      if ($navbarEl && !cardParams.hideStatusbarOnOpen && maxHeight === pageHeight) {
+        statusbarHeight = parseInt($navbarEl.css('--f7-safe-area-top'), 10);
+        if (Number.isNaN(statusbarHeight)) statusbarHeight = 0;
+      }
+      if (statusbarHeight) {
+        maxHeight -= statusbarHeight;
+      }
+
       scaleX = maxWidth / cardWidth;
       scaleY = maxHeight / cardHeight;
 
       $cardEl.transform('translate3d(0px, 0px, 0) scale(1)');
       offset = $cardEl.offset();
       pageOffset = $pageEl.offset();
+      if (statusbarHeight) {
+        pageOffset.top += statusbarHeight / 2;
+      }
       offset.left -= pageOffset.left;
       offset.top -= pageOffset.top;
 
@@ -194,13 +250,21 @@ const CardExpandable = {
       translateX = (cardRightOffset - cardLeftOffset) / 2;
       translateY = (cardBottomOffset - cardTopOffset) / 2;
 
-      $cardEl.transform(`translate3d(${translateX}px, ${translateY}px, 0) scale(${scaleX}, ${scaleY})`);
+      $cardEl.transform(
+        `translate3d(${
+          app.rtl ? -translateX : translateX
+        }px, ${translateY}px, 0) scale(${scaleX}, ${scaleY})`,
+      );
       $cardContentEl
         .css({
           width: `${maxWidth}px`,
           height: `${maxHeight}px`,
         })
-        .transform(`translate3d(${app.rtl ? (cardLeftOffset + translateX) : (-cardLeftOffset - translateX)}px, 0px, 0) scale(${1 / scaleX}, ${1 / scaleY})`);
+        .transform(
+          `translate3d(${
+            app.rtl ? cardLeftOffset + translateX : -cardLeftOffset - translateX
+          }px, 0px, 0) scale(${1 / scaleX}, ${1 / scaleY})`,
+        );
     }
 
     let cardScrollTop;
@@ -214,10 +278,21 @@ const CardExpandable = {
     let progress;
     let isV;
     let isH;
+    let $cardScrollableEl;
     function onTouchStart(e) {
-      if (!$(e.target).closest($cardEl).length) return;
+      if (!$(e.target).closest($cardEl).length || !e.isTrusted) return;
       if (!$cardEl.hasClass('card-opened')) return;
-      cardScrollTop = $cardContentEl.scrollTop();
+      $cardScrollableEl = $cardEl.find(cardParams.scrollableEl);
+
+      if (
+        $cardScrollableEl[0] &&
+        $cardScrollableEl[0] !== $cardContentEl[0] &&
+        !$cardScrollableEl[0].contains(e.target)
+      ) {
+        cardScrollTop = 0;
+      } else {
+        cardScrollTop = $cardScrollableEl.scrollTop();
+      }
       isTouched = true;
       touchStartX = e.targetTouches[0].pageX;
       touchStartY = e.targetTouches[0].pageY;
@@ -226,11 +301,13 @@ const CardExpandable = {
       isH = false;
     }
     function onTouchMove(e) {
-      if (!isTouched) return;
+      if (!isTouched || !e.isTrusted) return;
       touchEndX = e.targetTouches[0].pageX;
       touchEndY = e.targetTouches[0].pageY;
       if (typeof isScrolling === 'undefined') {
-        isScrolling = !!(isScrolling || Math.abs(touchEndY - touchStartY) > Math.abs(touchEndX - touchStartX));
+        isScrolling = !!(
+          isScrolling || Math.abs(touchEndY - touchStartY) > Math.abs(touchEndX - touchStartX)
+        );
       }
       if (!isH && !isV) {
         if (!isScrolling && e.targetTouches[0].clientX <= 50) {
@@ -250,11 +327,13 @@ const CardExpandable = {
       }
 
       isMoved = true;
-      progress = isV ? Math.max((touchEndY - touchStartY) / 150, 0) : Math.max((touchEndX - touchStartX) / (cardWidth / 2), 0);
+      progress = isV
+        ? Math.max((touchEndY - touchStartY) / 150, 0)
+        : Math.max((touchEndX - touchStartX) / (cardWidth / 2), 0);
       if ((progress > 0 && isV) || isH) {
-        if (isV && app.device.ios) {
-          $cardContentEl.css('-webkit-overflow-scrolling', 'auto');
-          $cardContentEl.scrollTop(0);
+        if (isV && device.ios && $cardScrollableEl[0] === $cardContentEl[0]) {
+          $cardScrollableEl.css('-webkit-overflow-scrolling', 'auto');
+          $cardScrollableEl.scrollTop(0);
         }
         e.preventDefault();
       }
@@ -265,28 +344,36 @@ const CardExpandable = {
         isMoved = false;
         app.card.close($cardEl);
       } else {
-        $cardEl.transform(`translate3d(${translateX}px, ${translateY}px, 0) scale(${scaleX * (1 - progress * 0.2)}, ${scaleY * (1 - progress * 0.2)})`);
+        $cardEl.transform(
+          `translate3d(${app.rtl ? -translateX : translateX}px, ${translateY}px, 0) scale(${
+            scaleX * (1 - progress * 0.2)
+          }, ${scaleY * (1 - progress * 0.2)})`,
+        );
       }
     }
-    function onTouchEnd() {
-      if (!isTouched || !isMoved) return;
+    function onTouchEnd(e) {
+      if (!isTouched || !isMoved || !e.isTrusted) return;
       isTouched = false;
       isMoved = false;
-      if (app.device.ios) {
-        $cardContentEl.css('-webkit-overflow-scrolling', '');
+      if (device.ios) {
+        $cardScrollableEl.css('-webkit-overflow-scrolling', '');
       }
       if (progress >= 0.8) {
         app.card.close($cardEl);
       } else {
         $cardEl
           .addClass('card-transitioning')
-          .transform(`translate3d(${translateX}px, ${translateY}px, 0) scale(${scaleX}, ${scaleY})`);
+          .transform(
+            `translate3d(${
+              app.rtl ? -translateX : translateX
+            }px, ${translateY}px, 0) scale(${scaleX}, ${scaleY})`,
+          );
       }
     }
 
     $cardEl[0].detachEventHandlers = function detachEventHandlers() {
       app.off('resize', onResize);
-      if (Support.touch && cardParams.swipeToClose) {
+      if (support.touch && cardParams.swipeToClose) {
         app.off('touchstart:passive', onTouchStart);
         app.off('touchmove:active', onTouchMove);
         app.off('touchend:passive', onTouchEnd);
@@ -294,7 +381,7 @@ const CardExpandable = {
     };
 
     app.on('resize', onResize);
-    if (Support.touch && cardParams.swipeToClose) {
+    if (support.touch && cardParams.swipeToClose) {
       app.on('touchstart:passive', onTouchStart);
       app.on('touchmove:active', onTouchMove);
       app.on('touchend:passive', onTouchEnd);
@@ -302,9 +389,15 @@ const CardExpandable = {
   },
   close(cardEl = '.card-expandable.card-opened', animate = true) {
     const app = this;
+    const device = getDevice();
     const $cardEl = $(cardEl).eq(0);
     if (!$cardEl || !$cardEl.length) return;
-    if (!$cardEl.hasClass('card-opened') || $cardEl.hasClass('card-opening') || $cardEl.hasClass('card-closing')) return;
+    if (
+      !$cardEl.hasClass('card-opened') ||
+      $cardEl.hasClass('card-opening') ||
+      $cardEl.hasClass('card-closing')
+    )
+      return;
 
     const $cardContentEl = $cardEl.children('.card-content');
     const $pageContentEl = $cardEl.parents('.page-content');
@@ -313,6 +406,7 @@ const CardExpandable = {
     if (!$pageEl.length) return;
 
     const cardParams = Object.assign({ animate }, app.params.card, $cardEl.dataset());
+    const $cardScrollableEl = $cardEl.find(cardParams.scrollableEl);
 
     let $navbarEl;
     let $toolbarEl;
@@ -330,8 +424,8 @@ const CardExpandable = {
       if (!$navbarEl.length) {
         if ($pageEl[0].f7Page) $navbarEl = $pageEl[0].f7Page.$navbarEl;
       }
-      if ($navbarEl && $navbarEl.length) {
-        app.navbar.show($navbarEl, cardParams.animate);
+      if ($navbarEl && $navbarEl.length && !$cardEl[0].f7KeepNavbarOnClose) {
+        app.navbar.show($navbarEl, cardParams.animate, true);
       }
     }
     if (cardParams.hideToolbarOnOpen) {
@@ -342,14 +436,14 @@ const CardExpandable = {
       if (!$toolbarEl.length) {
         $toolbarEl = $pageEl.parents('.views').children('.toolbar');
       }
-      if ($toolbarEl && $toolbarEl.length) {
+      if ($toolbarEl && $toolbarEl.length && !$cardEl[0].f7KeepToolbarOnClose) {
         app.toolbar.show($toolbarEl, cardParams.animate);
       }
     }
 
     $pageEl.removeClass('page-with-card-opened');
 
-    if (app.device.ios && $pageContentEl.length) {
+    if (device.ios && $pageContentEl.length) {
       $pageContentEl.css('height', `${$pageContentEl[0].offsetHeight + 1}px`);
       setTimeout(() => {
         $pageContentEl.css('height', '');
@@ -368,21 +462,36 @@ const CardExpandable = {
     }
     $cardEl.transform('');
     $cardEl.trigger('card:close');
-    app.emit('cardClose', $cardEl[0]);
+    app.emit('cardClose', $cardEl[0], $pageEl[0]);
+
+    const animateWidth = $cardEl.hasClass('card-expandable-animate-width');
 
     function transitionEnd() {
+      if (!animateWidth) {
+        $cardContentEl.css({
+          width: '',
+          height: '',
+        });
+      }
+      if ($backdropEl && $backdropEl.length) {
+        $backdropEl.removeClass('card-backdrop-in card-backdrop-out');
+      }
       $cardEl.removeClass('card-closing card-no-transition');
       $cardEl.trigger('card:closed');
       $cardEl.find('.card-expandable-size').remove();
       app.emit('cardClosed', $cardEl[0], $pageEl[0]);
     }
-    $cardContentEl
-      .css({
+    if (animateWidth) {
+      $cardContentEl.css({
         width: '',
         height: '',
-      })
-      .transform('')
-      .scrollTop(0, animate ? 300 : 0);
+      });
+    }
+
+    $cardContentEl.transform('').scrollTop(0, animate ? 300 : 0);
+    if ($cardScrollableEl.length && $cardScrollableEl[0] !== $cardContentEl[0]) {
+      $cardScrollableEl.scrollTop(0, animate ? 300 : 0);
+    }
     if (animate) {
       $cardContentEl.transitionEnd(() => {
         transitionEnd();
@@ -413,7 +522,9 @@ export default {
   params: {
     card: {
       hideNavbarOnOpen: true,
+      hideStatusbarOnOpen: true,
       hideToolbarOnOpen: true,
+      scrollableEl: '.card-content',
       swipeToClose: true,
       closeByBackdropClick: true,
       backdrop: true,
@@ -421,22 +532,25 @@ export default {
   },
   create() {
     const app = this;
-    Utils.extend(app, {
-      card: {
-        open: CardExpandable.open.bind(app),
-        close: CardExpandable.close.bind(app),
-        toggle: CardExpandable.toggle.bind(app),
-      },
+    bindMethods(app, {
+      card: CardExpandable,
     });
   },
   on: {
     pageBeforeIn(page) {
       const app = this;
-      if (app.params.card.hideNavbarOnOpen && page.navbarEl && page.$el.find('.card-opened.card-expandable').length) {
-        app.navbar.hide(page.navbarEl);
+      if (
+        app.params.card.hideNavbarOnOpen &&
+        page.navbarEl &&
+        page.$el.find('.card-opened.card-expandable').length
+      ) {
+        app.navbar.hide(page.navbarEl, true, app.params.card.hideStatusbarOnOpen, true);
       }
 
-      if (app.params.card.hideToolbarOnOpen && page.$el.find('.card-opened.card-expandable').length) {
+      if (
+        app.params.card.hideToolbarOnOpen &&
+        page.$el.find('.card-opened.card-expandable').length
+      ) {
         let $toolbarEl = page.$el.children('.toolbar');
         if (!$toolbarEl.length) {
           $toolbarEl = page.$el.parents('.view').children('.toolbar');
@@ -461,7 +575,12 @@ export default {
     },
     '.card-expandable': function toggleExpandableCard($clickedEl, data, e) {
       const app = this;
-      if ($clickedEl.hasClass('card-opened') || $clickedEl.hasClass('card-opening') || $clickedEl.hasClass('card-closing')) return;
+      if (
+        $clickedEl.hasClass('card-opened') ||
+        $clickedEl.hasClass('card-opening') ||
+        $clickedEl.hasClass('card-closing')
+      )
+        return;
       if ($(e.target).closest('.card-prevent-open, .card-close').length) return;
       app.card.open($clickedEl);
     },
@@ -471,9 +590,9 @@ export default {
       if (app.params.card.closeByBackdropClick) needToClose = true;
       const $openedCardEl = $('.card-opened');
       if (!$openedCardEl.length) return;
-      if ($openedCardEl.attr('data-close-on-backdrop-click') === 'true') {
+      if ($openedCardEl.attr('data-close-by-backdrop-click') === 'true') {
         needToClose = true;
-      } else if ($openedCardEl.attr('data-close-on-backdrop-click') === 'false') {
+      } else if ($openedCardEl.attr('data-close-by-backdrop-click') === 'false') {
         needToClose = false;
       }
       if (needToClose) app.card.close($openedCardEl);

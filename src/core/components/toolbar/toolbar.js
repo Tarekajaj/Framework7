@@ -1,14 +1,17 @@
-import $ from 'dom7';
-import Utils from '../../utils/utils';
+import $ from '../../shared/dom7.js';
+import { nextFrame, bindMethods } from '../../shared/utils.js';
 
 const Toolbar = {
   setHighlight(tabbarEl) {
     const app = this;
-    if (app.theme !== 'md') return;
-
     const $tabbarEl = $(tabbarEl);
+    if (app.theme === 'ios' && !$tabbarEl.hasClass('tabbar-highlight')) return;
 
-    if ($tabbarEl.length === 0 || !($tabbarEl.hasClass('tabbar') || $tabbarEl.hasClass('tabbar-labels'))) return;
+    if (
+      $tabbarEl.length === 0 ||
+      !($tabbarEl.hasClass('tabbar') || $tabbarEl.hasClass('tabbar-icons'))
+    )
+      return;
 
     let $highlightEl = $tabbarEl.find('.tab-link-highlight');
     const tabLinksCount = $tabbarEl.find('.tab-link').length;
@@ -37,10 +40,8 @@ const Toolbar = {
       highlightTranslate = `${(app.rtl ? -activeIndex : activeIndex) * 100}%`;
     }
 
-    Utils.nextFrame(() => {
-      $highlightEl
-        .css('width', highlightWidth)
-        .transform(`translate3d(${highlightTranslate},0,0)`);
+    nextFrame(() => {
+      $highlightEl.css('width', highlightWidth).transform(`translate3d(${highlightTranslate},0,0)`);
     });
   },
   init(tabbarEl) {
@@ -48,6 +49,7 @@ const Toolbar = {
     app.toolbar.setHighlight(tabbarEl);
   },
   hide(el, animate = true) {
+    const app = this;
     const $el = $(el);
     if ($el.hasClass('toolbar-hidden')) return;
     const className = `toolbar-hidden${animate ? ' toolbar-transitioning' : ''}`;
@@ -55,8 +57,11 @@ const Toolbar = {
       $el.removeClass('toolbar-transitioning');
     });
     $el.addClass(className);
+    $el.trigger('toolbar:hide');
+    app.emit('toolbarHide', $el[0]);
   },
   show(el, animate = true) {
+    const app = this;
     const $el = $(el);
     if (!$el.hasClass('toolbar-hidden')) return;
     if (animate) {
@@ -66,8 +71,10 @@ const Toolbar = {
       });
     }
     $el.removeClass('toolbar-hidden');
+    $el.trigger('toolbar:show');
+    app.emit('toolbarShow', $el[0]);
   },
-  initHideToolbarOnScroll(pageEl) {
+  initToolbarOnScroll(pageEl) {
     const app = this;
     const $pageEl = $(pageEl);
     let $toolbarEl = $pageEl.parents('.view').children('.toolbar');
@@ -75,7 +82,7 @@ const Toolbar = {
       $toolbarEl = $pageEl.find('.toolbar');
     }
     if ($toolbarEl.length === 0) {
-      $toolbarEl = $pageEl.parents('.views').children('.tabbar, .tabbar-labels');
+      $toolbarEl = $pageEl.parents('.views').children('.tabbar, .tabbar-icons');
     }
     if ($toolbarEl.length === 0) {
       return;
@@ -89,9 +96,13 @@ const Toolbar = {
     let reachEnd;
     let action;
     let toolbarHidden;
-    function handleScroll() {
-      const scrollContent = this;
+    function handleScroll(e) {
+      if ($pageEl.hasClass('page-with-card-opened')) return;
       if ($pageEl.hasClass('page-previous')) return;
+      const scrollContent = this;
+      if (e && e.target && e.target !== scrollContent) {
+        return;
+      }
       currentScrollTop = scrollContent.scrollTop;
       scrollHeight = scrollContent.scrollHeight;
       offsetHeight = scrollContent.offsetHeight;
@@ -132,14 +143,8 @@ export default {
   name: 'toolbar',
   create() {
     const app = this;
-    Utils.extend(app, {
-      toolbar: {
-        hide: Toolbar.hide.bind(app),
-        show: Toolbar.show.bind(app),
-        setHighlight: Toolbar.setHighlight.bind(app),
-        initHideToolbarOnScroll: Toolbar.initHideToolbarOnScroll.bind(app),
-        init: Toolbar.init.bind(app),
-      },
+    bindMethods(app, {
+      toolbar: Toolbar,
     });
   },
   params: {
@@ -159,7 +164,7 @@ export default {
       const app = this;
       let $toolbarEl = page.$el.parents('.view').children('.toolbar');
       if ($toolbarEl.length === 0) {
-        $toolbarEl = page.$el.parents('.views').children('.tabbar, .tabbar-labels');
+        $toolbarEl = page.$el.parents('.views').children('.tabbar, .tabbar-icons');
       }
       if ($toolbarEl.length === 0) {
         $toolbarEl = page.$el.find('.toolbar');
@@ -175,32 +180,40 @@ export default {
     },
     pageInit(page) {
       const app = this;
-      page.$el.find('.tabbar, .tabbar-labels').each((index, tabbarEl) => {
+      page.$el.find('.tabbar, .tabbar-icons').each((tabbarEl) => {
         app.toolbar.init(tabbarEl);
       });
       if (
-        app.params.toolbar.hideOnPageScroll
-        || page.$el.find('.hide-toolbar-on-scroll').length
-        || page.$el.hasClass('hide-toolbar-on-scroll')
-        || page.$el.find('.hide-bars-on-scroll').length
-        || page.$el.hasClass('hide-bars-on-scroll')
+        app.params.toolbar.hideOnPageScroll ||
+        page.$el.find('.hide-toolbar-on-scroll').length ||
+        page.$el.hasClass('hide-toolbar-on-scroll') ||
+        page.$el.find('.hide-bars-on-scroll').length ||
+        page.$el.hasClass('hide-bars-on-scroll')
       ) {
         if (
-          page.$el.find('.keep-toolbar-on-scroll').length
-          || page.$el.hasClass('keep-toolbar-on-scroll')
-          || page.$el.find('.keep-bars-on-scroll').length
-          || page.$el.hasClass('keep-bars-on-scroll')
+          page.$el.find('.keep-toolbar-on-scroll').length ||
+          page.$el.hasClass('keep-toolbar-on-scroll') ||
+          page.$el.find('.keep-bars-on-scroll').length ||
+          page.$el.hasClass('keep-bars-on-scroll')
         ) {
           return;
         }
-        app.toolbar.initHideToolbarOnScroll(page.el);
+        app.toolbar.initToolbarOnScroll(page.el);
       }
     },
     init() {
       const app = this;
-      app.root.find('.tabbar, .tabbar-labels').each((index, tabbarEl) => {
+      app.$el.find('.tabbar, .tabbar-icons').each((tabbarEl) => {
         app.toolbar.init(tabbarEl);
       });
+    },
+  },
+  vnode: {
+    tabbar: {
+      insert(vnode) {
+        const app = this;
+        app.toolbar.init(vnode.elm);
+      },
     },
   },
 };

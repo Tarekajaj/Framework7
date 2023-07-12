@@ -1,23 +1,32 @@
-import $ from 'dom7';
-import { document } from 'ssr-window';
-import Utils from '../../utils/utils';
-import Modal from '../modal/modal-class';
+import { getDocument } from 'ssr-window';
+import $ from '../../shared/dom7.js';
+import { extend } from '../../shared/utils.js';
+import { getDevice } from '../../shared/get-device.js';
+import Modal from '../modal/modal-class.js';
+/** @jsx $jsx */
+import $jsx from '../../shared/$jsx.js';
 
 class Dialog extends Modal {
   constructor(app, params) {
-    const extendedParams = Utils.extend({
-      title: app.params.dialog.title,
-      text: undefined,
-      content: '',
-      buttons: [],
-      verticalButtons: false,
-      onClick: undefined,
-      cssClass: undefined,
-      destroyOnClose: false,
-      on: {},
-    }, params);
+    const extendedParams = extend(
+      {
+        title: app.params.dialog.title,
+        text: undefined,
+        content: '',
+        buttons: [],
+        verticalButtons: false,
+        onClick: undefined,
+        cssClass: undefined,
+        destroyOnClose: false,
+        on: {},
+      },
+      params,
+    );
     if (typeof extendedParams.closeByBackdropClick === 'undefined') {
       extendedParams.closeByBackdropClick = app.params.dialog.closeByBackdropClick;
+    }
+    if (typeof extendedParams.backdrop === 'undefined') {
+      extendedParams.backdrop = app.params.dialog.backdrop;
     }
 
     // Extends with open/close Modal methods;
@@ -25,7 +34,10 @@ class Dialog extends Modal {
 
     const dialog = this;
 
-    const { title, text, content, buttons, verticalButtons, cssClass } = extendedParams;
+    const device = getDevice();
+    const document = getDocument();
+
+    const { title, text, content, buttons, verticalButtons, cssClass, backdrop } = extendedParams;
 
     dialog.params = extendedParams;
 
@@ -40,25 +52,31 @@ class Dialog extends Modal {
 
       let buttonsHTML = '';
       if (buttons.length > 0) {
-        buttonsHTML = `
+        buttonsHTML = (
           <div class="dialog-buttons">
-            ${buttons.map(button => `
-              <span class="dialog-button${button.bold ? ' dialog-button-bold' : ''}${button.color ? ` color-${button.color}` : ''}${button.cssClass ? ` ${button.cssClass}` : ''}">${button.text}</span>
-            `).join('')}
+            {buttons.map((button) => (
+              <span
+                class={`dialog-button${button.strong ? ' dialog-button-strong' : ''}${
+                  button.color ? ` color-${button.color}` : ''
+                }${button.cssClass ? ` ${button.cssClass}` : ''}`}
+              >
+                {button.text}
+              </span>
+            ))}
           </div>
-        `;
+        );
       }
 
-      const dialogHtml = `
-        <div class="${dialogClasses.join(' ')}">
+      const dialogHtml = (
+        <div class={dialogClasses.join(' ')}>
           <div class="dialog-inner">
-            ${title ? `<div class="dialog-title">${title}</div>` : ''}
-            ${text ? `<div class="dialog-text">${text}</div>` : ''}
-            ${content}
+            {title && <div class="dialog-title">{title}</div>}
+            {text && <div class="dialog-text">{text}</div>}
+            {content}
           </div>
-          ${buttonsHTML}
+          {buttonsHTML}
         </div>
-      `;
+      );
       $el = $(dialogHtml);
     } else {
       $el = $(dialog.params.el);
@@ -72,10 +90,13 @@ class Dialog extends Modal {
       return dialog.destroy();
     }
 
-    let $backdropEl = app.root.children('.dialog-backdrop');
-    if ($backdropEl.length === 0) {
-      $backdropEl = $('<div class="dialog-backdrop"></div>');
-      app.root.append($backdropEl);
+    let $backdropEl;
+    if (backdrop) {
+      $backdropEl = app.$el.children('.dialog-backdrop');
+      if ($backdropEl.length === 0) {
+        $backdropEl = $('<div class="dialog-backdrop"></div>');
+        app.$el.append($backdropEl);
+      }
     }
 
     // Assign events
@@ -101,41 +122,43 @@ class Dialog extends Modal {
     }
     if (buttons && buttons.length > 0) {
       dialog.on('open', () => {
-        $el.find('.dialog-button').each((index, buttonEl) => {
+        $el.find('.dialog-button').each((buttonEl, index) => {
           const button = buttons[index];
           if (button.keyCodes) addKeyboardHander = true;
           $(buttonEl).on('click', buttonOnClick);
         });
         if (
-          addKeyboardHander
-          && !app.device.ios
-          && !app.device.android
-          && !app.device.cordova
+          addKeyboardHander &&
+          !device.ios &&
+          !device.android &&
+          !device.cordova &&
+          !device.capacitor
         ) {
           $(document).on('keydown', onKeyDown);
         }
       });
       dialog.on('close', () => {
-        $el.find('.dialog-button').each((index, buttonEl) => {
+        $el.find('.dialog-button').each((buttonEl) => {
           $(buttonEl).off('click', buttonOnClick);
         });
         if (
-          addKeyboardHander
-          && !app.device.ios
-          && !app.device.android
-          && !app.device.cordova
+          addKeyboardHander &&
+          !device.ios &&
+          !device.android &&
+          !device.cordova &&
+          !device.capacitor
         ) {
           $(document).off('keydown', onKeyDown);
         }
         addKeyboardHander = false;
       });
     }
-    Utils.extend(dialog, {
+    extend(dialog, {
       app,
       $el,
       el: $el[0],
       $backdropEl,
-      backdropEl: $backdropEl[0],
+      backdropEl: $backdropEl && $backdropEl[0],
       type: 'dialog',
       setProgress(progress, duration) {
         app.progressbar.set($el.find('.progressbar'), progress, duration);
@@ -172,9 +195,9 @@ class Dialog extends Modal {
       const $target = $(target);
       if ($target.closest(dialog.el).length === 0) {
         if (
-          dialog.params.closeByBackdropClick
-          && dialog.backdropEl
-          && dialog.backdropEl === target
+          dialog.params.closeByBackdropClick &&
+          dialog.backdropEl &&
+          dialog.backdropEl === target
         ) {
           dialog.close();
         }

@@ -1,7 +1,7 @@
-import $ from 'dom7';
-import Utils from '../../utils/utils';
-import ListIndex from './list-index-class';
-import ConstructorMethods from '../../utils/constructor-methods';
+import $ from '../../shared/dom7.js';
+import { extend } from '../../shared/utils.js';
+import ListIndex from './list-index-class.js';
+import ConstructorMethods from '../../shared/constructor-methods.js';
 
 export default {
   name: 'listIndex',
@@ -20,25 +20,29 @@ export default {
   on: {
     tabMounted(tabEl) {
       const app = this;
-      $(tabEl).find('.list-index-init').each((index, listIndexEl) => {
-        const params = Utils.extend($(listIndexEl).dataset(), { el: listIndexEl });
-        app.listIndex.create(params);
-      });
+      $(tabEl)
+        .find('.list-index-init')
+        .each((listIndexEl) => {
+          const params = extend($(listIndexEl).dataset(), { el: listIndexEl });
+          app.listIndex.create(params);
+        });
     },
     tabBeforeRemove(tabEl) {
-      $(tabEl).find('.list-index-init').each((index, listIndexEl) => {
-        if (listIndexEl.f7ListIndex) listIndexEl.f7ListIndex.destroy();
-      });
+      $(tabEl)
+        .find('.list-index-init')
+        .each((listIndexEl) => {
+          if (listIndexEl.f7ListIndex) listIndexEl.f7ListIndex.destroy();
+        });
     },
     pageInit(page) {
       const app = this;
-      page.$el.find('.list-index-init').each((index, listIndexEl) => {
-        const params = Utils.extend($(listIndexEl).dataset(), { el: listIndexEl });
+      page.$el.find('.list-index-init').each((listIndexEl) => {
+        const params = extend($(listIndexEl).dataset(), { el: listIndexEl });
         app.listIndex.create(params);
       });
     },
     pageBeforeRemove(page) {
-      page.$el.find('.list-index-init').each((index, listIndexEl) => {
+      page.$el.find('.list-index-init').each((listIndexEl) => {
         if (listIndexEl.f7ListIndex) listIndexEl.f7ListIndex.destroy();
       });
     },
@@ -48,7 +52,7 @@ export default {
       insert(vnode) {
         const app = this;
         const listIndexEl = vnode.elm;
-        const params = Utils.extend($(listIndexEl).dataset(), { el: listIndexEl });
+        const params = extend($(listIndexEl).dataset(), { el: listIndexEl });
         app.listIndex.create(params);
       },
       destroy(vnode) {

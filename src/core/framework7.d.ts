@@ -1,20 +1,21 @@
-import Template7 from 'template7';
 import Dom7 from 'dom7';
 // IMPORT_BASE
 
-// Helpers
-// IMPORT_HELPERS
+import { getSupport } from './shared/get-support.js';
+import { getDevice } from './shared/get-device.js';
+import { Utils } from './shared/utils.js';
 
-// Modules
 // IMPORT_MODULES
+import { ComponentFunction as Component } from './modules/component/component.js';
+import { StoreObject as Store, StoreParameters, createStore } from './modules/store/store.js';
 
-// Components
 // IMPORT_COMPONENTS
 
-declare module '{{basePath}}/components/app/app-class' {
+declare module './components/app/app-class.js' {
   // INSTALL
 }
 
-// EXPORT_HELPERS
-export { Template7, Dom7 };
+declare const utils: Utils;
+
+export { getSupport, getDevice, utils, Dom7, Component, Store, StoreParameters, createStore };
 export default Framework7;

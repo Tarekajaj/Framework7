@@ -1,6 +1,6 @@
-import $ from 'dom7';
-import Utils from '../../utils/utils';
-import Framework7Class from '../../utils/class';
+import $ from '../../shared/dom7.js';
+import { extend, deleteProps } from '../../shared/utils.js';
+import Framework7Class from '../../shared/class.js';
 
 class DataTable extends Framework7Class {
   constructor(app, params = {}) {
@@ -8,14 +8,12 @@ class DataTable extends Framework7Class {
 
     const table = this;
 
-    const defaults = {
-
-    };
+    const defaults = {};
 
     // Extend defaults with modules params
     table.useModulesParams(defaults);
 
-    table.params = Utils.extend(defaults, params);
+    table.params = extend(defaults, params);
 
     // El
     const $el = $(table.params.el);
@@ -32,7 +30,7 @@ class DataTable extends Framework7Class {
 
     table.$el[0].f7DataTable = table;
 
-    Utils.extend(table, {
+    extend(table, {
       collapsible: $el.hasClass('data-table-collapsible'),
       // Headers
       $headerEl: $el.find('.data-table-header'),
@@ -51,8 +49,7 @@ class DataTable extends Framework7Class {
 
       if ($inputEl.parents('thead').length > 0) {
         if (columnIndex === 0) {
-          $el
-            .find('tbody tr')[checked ? 'addClass' : 'removeClass']('data-table-row-selected');
+          $el.find('tbody tr')[checked ? 'addClass' : 'removeClass']('data-table-row-selected');
         }
         $el
           .find(`tbody tr td:nth-child(${columnIndex + 1}) input`)
@@ -63,9 +60,13 @@ class DataTable extends Framework7Class {
         if (columnIndex === 0) {
           $inputEl.parents('tr')[checked ? 'addClass' : 'removeClass']('data-table-row-selected');
         }
-        const checkedRows = $el.find(`tbody .checkbox-cell:nth-child(${columnIndex + 1}) input[type="checkbox"]:checked`).length;
+        const checkedRows = $el.find(
+          `tbody .checkbox-cell:nth-child(${columnIndex + 1}) input[type="checkbox"]:checked`,
+        ).length;
         const totalRows = $el.find('tbody tr').length;
-        const $headCheckboxEl = $el.find(`thead .checkbox-cell:nth-child(${columnIndex + 1}) input[type="checkbox"]`);
+        const $headCheckboxEl = $el.find(
+          `thead .checkbox-cell:nth-child(${columnIndex + 1}) input[type="checkbox"]`,
+        );
         if (!checked) {
           $headCheckboxEl.prop('checked', false);
         } else if (checkedRows === totalRows) {
@@ -112,11 +113,11 @@ class DataTable extends Framework7Class {
   setCollapsibleLabels() {
     const table = this;
     if (!table.collapsible) return;
-    table.$el.find('tbody td:not(.checkbox-cell)').each((index, el) => {
+    table.$el.find('tbody td:not(.checkbox-cell)').each((el) => {
       const $el = $(el);
       const elIndex = $el.index();
-      const collpsibleTitle = $el.attr('data-collapsible-title');
-      if (!collpsibleTitle && collpsibleTitle !== '') {
+      const collapsibleTitle = $el.attr('data-collapsible-title');
+      if (!collapsibleTitle && collapsibleTitle !== '') {
         $el.attr('data-collapsible-title', table.$el.find('thead th').eq(elIndex).text());
       }
     });
@@ -141,16 +142,16 @@ class DataTable extends Framework7Class {
   destroy() {
     let table = this;
 
-    table.$el.trigger('datatable:beforedestroy', table);
+    table.$el.trigger('datatable:beforedestroy');
     table.emit('local::beforeDestroy dataTableBeforeDestroy', table);
 
-    table.attachEvents();
+    table.detachEvents();
 
     if (table.$el[0]) {
       table.$el[0].f7DataTable = null;
       delete table.$el[0].f7DataTable;
     }
-    Utils.deleteProps(table);
+    deleteProps(table);
     table = null;
   }
 }

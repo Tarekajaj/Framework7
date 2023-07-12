@@ -1,27 +1,41 @@
-import $ from 'dom7';
-import Utils from '../../utils/utils';
-import Framework7Class from '../../utils/class';
+import {
+  extend,
+  colorRgbToHex,
+  colorRgbToHsl,
+  colorHslToHsb,
+  colorHslToRgb,
+  colorHsbToHsl,
+  colorHexToRgb,
+  nextTick,
+  deleteProps,
+} from '../../shared/utils.js';
+import Framework7Class from '../../shared/class.js';
+import $ from '../../shared/dom7.js';
+import { getDevice } from '../../shared/get-device.js';
 
-import moduleAlphaSlider from './modules/alpha-slider';
-import moduleCurrentColor from './modules/current-color';
-import moduleHex from './modules/hex';
-import moduleHsbSliders from './modules/hsb-sliders';
-import moduleHueSlider from './modules/hue-slider';
-import moduleBrightnessSlider from './modules/brightness-slider';
-import modulePalette from './modules/palette';
-import moduleInitialCurrentColors from './modules/initial-current-colors';
-import moduleRgbBars from './modules/rgb-bars';
-import moduleRgbSliders from './modules/rgb-sliders';
-import moduleSbSpectrum from './modules/sb-spectrum';
-import moduleHsSpectrum from './modules/hs-spectrum';
-import moduleWheel from './modules/wheel';
+import moduleAlphaSlider from './modules/alpha-slider.js';
+import moduleCurrentColor from './modules/current-color.js';
+import moduleHex from './modules/hex.js';
+import moduleHsbSliders from './modules/hsb-sliders.js';
+import moduleHueSlider from './modules/hue-slider.js';
+import moduleBrightnessSlider from './modules/brightness-slider.js';
+import modulePalette from './modules/palette.js';
+import moduleInitialCurrentColors from './modules/initial-current-colors.js';
+import moduleRgbBars from './modules/rgb-bars.js';
+import moduleRgbSliders from './modules/rgb-sliders.js';
+import moduleSbSpectrum from './modules/sb-spectrum.js';
+import moduleHsSpectrum from './modules/hs-spectrum.js';
+import moduleWheel from './modules/wheel.js';
+
+/** @jsx $jsx */
+import $jsx from '../../shared/$jsx.js';
 
 class ColorPicker extends Framework7Class {
   constructor(app, params = {}) {
     super(params, [app]);
     const self = this;
 
-    self.params = Utils.extend({}, app.params.colorPicker, params);
+    self.params = extend({}, app.params.colorPicker, params);
 
     let $containerEl;
     if (self.params.containerEl) {
@@ -39,16 +53,7 @@ class ColorPicker extends Framework7Class {
       $targetEl = $(self.params.targetEl);
     }
 
-    let view;
-    if ($inputEl) {
-      view = $inputEl.parents('.view').length && $inputEl.parents('.view')[0].f7View;
-    }
-    if (!view && $targetEl) {
-      view = $targetEl.parents('.view').length && $targetEl.parents('.view')[0].f7View;
-    }
-    if (!view) view = app.views.main;
-
-    Utils.extend(self, {
+    extend(self, {
       app,
       $containerEl,
       containerEl: $containerEl && $containerEl[0],
@@ -60,21 +65,20 @@ class ColorPicker extends Framework7Class {
       initialized: false,
       opened: false,
       url: self.params.url,
-      view,
       modules: {
         'alpha-slider': moduleAlphaSlider,
         'current-color': moduleCurrentColor,
-        'hex': moduleHex, // eslint-disable-line
+        hex: moduleHex, // eslint-disable-line
         'hsb-sliders': moduleHsbSliders,
         'hue-slider': moduleHueSlider,
         'brightness-slider': moduleBrightnessSlider,
-        'palette': modulePalette, // eslint-disable-line
+        palette: modulePalette, // eslint-disable-line
         'initial-current-colors': moduleInitialCurrentColors,
         'rgb-bars': moduleRgbBars,
         'rgb-sliders': moduleRgbSliders,
         'sb-spectrum': moduleSbSpectrum,
         'hs-spectrum': moduleHsSpectrum,
-        'wheel': moduleWheel, // eslint-disable-line
+        wheel: moduleWheel, // eslint-disable-line
       },
     });
 
@@ -88,13 +92,17 @@ class ColorPicker extends Framework7Class {
       self.open();
     }
     function onHtmlClick(e) {
+      if (self.destroyed || !self.params) return;
       if (self.params.openIn === 'page') return;
       const $clickTargetEl = $(e.target);
       if (!self.opened || self.closing) return;
       if ($clickTargetEl.closest('[class*="backdrop"]').length) return;
       if ($clickTargetEl.closest('.color-picker-popup, .color-picker-popover').length) return;
       if ($inputEl && $inputEl.length > 0) {
-        if ($clickTargetEl[0] !== $inputEl[0] && $clickTargetEl.closest('.sheet-modal').length === 0) {
+        if (
+          $clickTargetEl[0] !== $inputEl[0] &&
+          $clickTargetEl.closest('.sheet-modal').length === 0
+        ) {
           self.close();
         }
       } else if ($(e.target).closest('.sheet-modal').length === 0) {
@@ -103,17 +111,23 @@ class ColorPicker extends Framework7Class {
     }
 
     // Events
-    Utils.extend(self, {
+    extend(self, {
       attachInputEvents() {
         self.$inputEl.on('click', onInputClick);
         if (self.params.inputReadOnly) {
           self.$inputEl.on('focus mousedown', onInputFocus);
+          if (self.$inputEl[0]) {
+            self.$inputEl[0].f7ValidateReadonly = true;
+          }
         }
       },
       detachInputEvents() {
         self.$inputEl.off('click', onInputClick);
         if (self.params.inputReadOnly) {
           self.$inputEl.off('focus mousedown', onInputFocus);
+          if (self.$inputEl[0]) {
+            delete self.$inputEl[0].f7ValidateReadonly;
+          }
         }
       },
       attachTargetEvents() {
@@ -133,6 +147,24 @@ class ColorPicker extends Framework7Class {
     self.init();
 
     return self;
+  }
+
+  get view() {
+    const { $inputEl, $targetEl, app, params } = this;
+    let view;
+    if (params.view) {
+      view = params.view;
+    } else {
+      if ($inputEl) {
+        view = $inputEl.parents('.view').length && $inputEl.parents('.view')[0].f7View;
+      }
+      if (!view && $targetEl) {
+        view = $targetEl.parents('.view').length && $targetEl.parents('.view')[0].f7View;
+      }
+    }
+    if (!view) view = app.views.main;
+
+    return view;
   }
 
   attachEvents() {
@@ -173,13 +205,14 @@ class ColorPicker extends Framework7Class {
     const self = this;
     const { app, modal, params } = self;
     const { openIn, openInPhone } = params;
+    const device = getDevice();
     if (modal && modal.type) return modal.type;
     if (openIn !== 'auto') return openIn;
     if (self.inline) return null;
-    if (app.device.ios) {
-      return app.device.ipad ? 'popover' : openInPhone;
+    if (device.ios) {
+      return device.ipad ? 'popover' : openInPhone;
     }
-    if (app.width >= 768 || (app.device.desktop && app.theme === 'aurora')) {
+    if (app.width >= 768) {
       return 'popover';
     }
 
@@ -208,16 +241,7 @@ class ColorPicker extends Framework7Class {
     const self = this;
     if (typeof value === 'undefined') return;
 
-    let {
-      hex,
-      rgb,
-      hsl,
-      hsb,
-      alpha = 1,
-      hue,
-      rgba,
-      hsla,
-    } = (self.value || {});
+    let { hex, rgb, hsl, hsb, alpha = 1, hue, rgba, hsla } = self.value || {};
 
     const needChangeEvent = self.value || (!self.value && !self.params.value);
     let valueChanged;
@@ -240,11 +264,11 @@ class ColorPicker extends Framework7Class {
     if (!valueChanged) return;
 
     if (value.rgb || value.rgba) {
-      const [r, g, b, a = alpha] = (value.rgb || value.rgba);
+      const [r, g, b, a = alpha] = value.rgb || value.rgba;
       rgb = [r, g, b];
-      hex = Utils.colorRgbToHex(...rgb);
-      hsl = Utils.colorRgbToHsl(...rgb);
-      hsb = Utils.colorHslToHsb(...hsl);
+      hex = colorRgbToHex(...rgb);
+      hsl = colorRgbToHsl(...rgb);
+      hsb = colorHslToHsb(...hsl);
       hsl = self.normalizeHsValues(hsl);
       hsb = self.normalizeHsValues(hsb);
       hue = hsb[0];
@@ -254,11 +278,11 @@ class ColorPicker extends Framework7Class {
     }
 
     if (value.hsl || value.hsla) {
-      const [h, s, l, a = alpha] = (value.hsl || value.hsla);
+      const [h, s, l, a = alpha] = value.hsl || value.hsla;
       hsl = [h, s, l];
-      rgb = Utils.colorHslToRgb(...hsl);
-      hex = Utils.colorRgbToHex(...rgb);
-      hsb = Utils.colorHslToHsb(...hsl);
+      rgb = colorHslToRgb(...hsl);
+      hex = colorRgbToHex(...rgb);
+      hsb = colorHslToHsb(...hsl);
       hsl = self.normalizeHsValues(hsl);
       hsb = self.normalizeHsValues(hsb);
       hue = hsb[0];
@@ -270,9 +294,9 @@ class ColorPicker extends Framework7Class {
     if (value.hsb) {
       const [h, s, b, a = alpha] = value.hsb;
       hsb = [h, s, b];
-      hsl = Utils.colorHsbToHsl(...hsb);
-      rgb = Utils.colorHslToRgb(...hsl);
-      hex = Utils.colorRgbToHex(...rgb);
+      hsl = colorHsbToHsl(...hsb);
+      rgb = colorHslToRgb(...hsl);
+      hex = colorRgbToHex(...rgb);
       hsl = self.normalizeHsValues(hsl);
       hsb = self.normalizeHsValues(hsb);
       hue = hsb[0];
@@ -282,10 +306,10 @@ class ColorPicker extends Framework7Class {
     }
 
     if (value.hex) {
-      rgb = Utils.colorHexToRgb(value.hex);
-      hex = Utils.colorRgbToHex(...rgb);
-      hsl = Utils.colorRgbToHsl(...rgb);
-      hsb = Utils.colorHslToHsb(...hsl);
+      rgb = colorHexToRgb(value.hex);
+      hex = colorRgbToHex(...rgb);
+      hsl = colorRgbToHsl(...rgb);
+      hsb = colorHslToHsb(...hsl);
       hsl = self.normalizeHsValues(hsl);
       hsb = self.normalizeHsValues(hsb);
       hue = hsb[0];
@@ -306,9 +330,9 @@ class ColorPicker extends Framework7Class {
     if (typeof value.hue !== 'undefined') {
       const [h, s, l] = hsl; // eslint-disable-line
       hsl = [value.hue, s, l];
-      hsb = Utils.colorHslToHsb(...hsl);
-      rgb = Utils.colorHslToRgb(...hsl);
-      hex = Utils.colorRgbToHex(...rgb);
+      hsb = colorHslToHsb(...hsl);
+      rgb = colorHslToRgb(...hsl);
+      hex = colorRgbToHex(...rgb);
       hsl = self.normalizeHsValues(hsl);
       hsb = self.normalizeHsValues(hsb);
       hue = hsb[0];
@@ -325,7 +349,7 @@ class ColorPicker extends Framework7Class {
       rgba,
       hsla,
     };
-    if (!self.initialValue) self.initialValue = Utils.extend({}, self.value);
+    if (!self.initialValue) self.initialValue = extend({}, self.value);
     self.updateValue(needChangeEvent);
     if (self.opened && updateModules) {
       self.updateModules();
@@ -398,26 +422,29 @@ class ColorPicker extends Framework7Class {
       return self.params.renderNavbar.call(self, self);
     }
     const { openIn, navbarTitleText, navbarBackLinkText, navbarCloseText } = self.params;
-    return `
-    <div class="navbar">
-      <div class="navbar-inner sliding">
-        ${openIn === 'page' ? `
-        <div class="left">
-          <a class="link back">
-            <i class="icon icon-back"></i>
-            <span class="if-not-md">${navbarBackLinkText}</span>
-          </a>
+    return (
+      <div class="navbar">
+        <div class="navbar-bg"></div>
+        <div class="navbar-inner sliding">
+          {openIn === 'page' && (
+            <div class="left">
+              <a class="link back">
+                <i class="icon icon-back"></i>
+                <span class="if-not-md">{navbarBackLinkText}</span>
+              </a>
+            </div>
+          )}
+          <div class="title">{navbarTitleText}</div>
+          {openIn !== 'page' && (
+            <div class="right">
+              <a class="link popup-close" data-popup=".color-picker-popup">
+                {navbarCloseText}
+              </a>
+            </div>
+          )}
         </div>
-        ` : ''}
-        <div class="title">${navbarTitleText}</div>
-        ${openIn !== 'page' ? `
-        <div class="right">
-          <a class="link popup-close" data-popup=".color-picker-popup">${navbarCloseText}</a>
-        </div>
-        ` : ''}
       </div>
-    </div>
-  `.trim();
+    );
   }
 
   renderToolbar() {
@@ -425,99 +452,96 @@ class ColorPicker extends Framework7Class {
     if (self.params.renderToolbar) {
       return self.params.renderToolbar.call(self, self);
     }
-    return `
-    <div class="toolbar toolbar-top no-shadow">
-      <div class="toolbar-inner">
-        <div class="left"></div>
-        <div class="right">
-          <a class="link sheet-close popover-close" data-sheet=".color-picker-sheet-modal" data-popover=".color-picker-popover">${self.params.toolbarCloseText}</a>
+    return (
+      <div class="toolbar toolbar-top">
+        <div class="toolbar-inner">
+          <div class="left"></div>
+          <div class="right">
+            <a
+              class="link sheet-close popover-close"
+              data-sheet=".color-picker-sheet-modal"
+              data-popover=".color-picker-popover"
+            >
+              {self.params.toolbarCloseText}
+            </a>
+          </div>
         </div>
       </div>
-    </div>
-  `.trim();
+    );
   }
 
   renderInline() {
     const self = this;
     const { cssClass, groupedModules } = self.params;
-    const inlineHtml = `
-    <div class="color-picker color-picker-inline ${groupedModules ? 'color-picker-grouped-modules' : ''} ${cssClass || ''}">
-      ${self.renderPicker()}
-    </div>
-  `.trim();
-
-    return inlineHtml;
+    return (
+      <div
+        class={`color-picker color-picker-inline ${
+          groupedModules ? 'color-picker-grouped-modules' : ''
+        } ${cssClass || ''}`}
+      >
+        {self.renderPicker()}
+      </div>
+    );
   }
 
   renderSheet() {
     const self = this;
     const { cssClass, toolbarSheet, groupedModules } = self.params;
-    const sheetHtml = `
-    <div class="sheet-modal color-picker color-picker-sheet-modal ${groupedModules ? 'color-picker-grouped-modules' : ''} ${cssClass || ''}">
-      ${toolbarSheet ? self.renderToolbar() : ''}
-      <div class="sheet-modal-inner">
-        <div class="page-content">
-          ${self.renderPicker()}
+    return (
+      <div
+        class={`sheet-modal color-picker color-picker-sheet-modal ${
+          groupedModules ? 'color-picker-grouped-modules' : ''
+        } ${cssClass || ''}`}
+      >
+        {toolbarSheet && self.renderToolbar()}
+        <div class="sheet-modal-inner">
+          <div class="page-content">{self.renderPicker()}</div>
         </div>
       </div>
-    </div>
-  `.trim();
-
-    return sheetHtml;
+    );
   }
 
   renderPopover() {
     const self = this;
     const { cssClass, toolbarPopover, groupedModules } = self.params;
-    const popoverHtml = `
-    <div class="popover color-picker-popover ${cssClass || ''}">
-      <div class="popover-inner">
-        <div class="color-picker ${groupedModules ? 'color-picker-grouped-modules' : ''}">
-          ${toolbarPopover ? self.renderToolbar() : ''}
-          <div class="page-content">
-            ${self.renderPicker()}
+    return (
+      <div class={`popover color-picker-popover ${cssClass || ''}`}>
+        <div class="popover-inner">
+          <div class={`color-picker ${groupedModules ? 'color-picker-grouped-modules' : ''}`}>
+            {toolbarPopover && self.renderToolbar()}
+            <div class="page-content">{self.renderPicker()}</div>
           </div>
         </div>
       </div>
-    </div>
-  `.trim();
-
-    return popoverHtml;
+    );
   }
 
   renderPopup() {
     const self = this;
     const { cssClass, navbarPopup, groupedModules } = self.params;
-    const popupHtml = `
-    <div class="popup color-picker-popup ${cssClass || ''}">
-      <div class="page">
-        ${navbarPopup ? self.renderNavbar() : ''}
-        <div class="color-picker ${groupedModules ? 'color-picker-grouped-modules' : ''}">
-          <div class="page-content">
-            ${self.renderPicker()}
+    return (
+      <div class={`popup color-picker-popup ${cssClass || ''}`}>
+        <div class="page">
+          {navbarPopup && self.renderNavbar()}
+          <div class={`color-picker ${groupedModules ? 'color-picker-grouped-modules' : ''}`}>
+            <div class="page-content">{self.renderPicker()}</div>
           </div>
         </div>
       </div>
-    </div>
-  `.trim();
-
-    return popupHtml;
+    );
   }
 
   renderPage() {
     const self = this;
     const { cssClass, groupedModules } = self.params;
-    const pageHtml = `
-    <div class="page color-picker-page ${cssClass || ''}" data-name="color-picker-page">
-      ${self.renderNavbar()}
-      <div class="color-picker ${groupedModules ? 'color-picker-grouped-modules' : ''}">
-        <div class="page-content">
-          ${self.renderPicker()}
+    return (
+      <div class={`page color-picker-page ${cssClass || ''}`} data-name="color-picker-page">
+        {self.renderNavbar()}
+        <div class={`color-picker ${groupedModules ? 'color-picker-grouped-modules' : ''}`}>
+          <div class="page-content">{self.renderPicker()}</div>
         </div>
       </div>
-    </div>
-  `.trim();
-    return pageHtml;
+    );
   }
 
   // eslint-disable-next-line
@@ -547,7 +571,7 @@ class ColorPicker extends Framework7Class {
     self.attachEvents();
 
     params.modules.forEach((m) => {
-      if (typeof m === 'string' && modules[m] && modules[m].render) {
+      if (typeof m === 'string' && modules[m] && modules[m].init) {
         modules[m].init(self);
       } else if (m && m.init) {
         m.init(self);
@@ -565,7 +589,7 @@ class ColorPicker extends Framework7Class {
         self.setValue({ hex: '#ff0000' }, false);
       }
     } else if (value) {
-      self.initialValue = Utils.extend({}, value);
+      self.initialValue = extend({}, value);
       self.setValue(value, false);
     }
 
@@ -587,10 +611,10 @@ class ColorPicker extends Framework7Class {
 
     // Trigger events
     if ($el) {
-      $el.trigger('colorpicker:open', self);
+      $el.trigger('colorpicker:open');
     }
     if ($inputEl) {
-      $inputEl.trigger('colorpicker:open', self);
+      $inputEl.trigger('colorpicker:open');
     }
     self.emit('local::open colorPickerOpen', self);
   }
@@ -599,10 +623,10 @@ class ColorPicker extends Framework7Class {
     const self = this;
     self.opening = false;
     if (self.$el) {
-      self.$el.trigger('colorpicker:opened', self);
+      self.$el.trigger('colorpicker:opened');
     }
     if (self.$inputEl) {
-      self.$inputEl.trigger('colorpicker:opened', self);
+      self.$inputEl.trigger('colorpicker:opened');
     }
     self.emit('local::opened colorPickerOpened', self);
   }
@@ -616,11 +640,19 @@ class ColorPicker extends Framework7Class {
     // Detach events
     self.detachEvents();
 
-    if (self.$inputEl && app.theme === 'md') {
-      self.$inputEl.trigger('blur');
+    if (self.$inputEl) {
+      if (app.theme === 'md') {
+        self.$inputEl.trigger('blur');
+      } else {
+        const validate = self.$inputEl.attr('validate');
+        const required = self.$inputEl.attr('required');
+        if (validate && required) {
+          app.input.validate(self.$inputEl);
+        }
+      }
     }
     params.modules.forEach((m) => {
-      if (typeof m === 'string' && modules[m] && modules[m].update) {
+      if (typeof m === 'string' && modules[m] && modules[m].destroy) {
         modules[m].destroy(self);
       } else if (m && m.destroy) {
         m.destroy(self);
@@ -628,10 +660,10 @@ class ColorPicker extends Framework7Class {
     });
 
     if (self.$el) {
-      self.$el.trigger('colorpicker:close', self);
+      self.$el.trigger('colorpicker:close');
     }
     if (self.$inputEl) {
-      self.$inputEl.trigger('colorpicker:close', self);
+      self.$inputEl.trigger('colorpicker:close');
     }
     self.emit('local::close colorPickerClose', self);
   }
@@ -642,7 +674,7 @@ class ColorPicker extends Framework7Class {
     self.closing = false;
 
     if (!self.inline) {
-      Utils.nextTick(() => {
+      nextTick(() => {
         if (self.modal && self.modal.el && self.modal.destroy) {
           if (!self.params.routableModals) {
             self.modal.destroy();
@@ -652,10 +684,10 @@ class ColorPicker extends Framework7Class {
       });
     }
     if (self.$el) {
-      self.$el.trigger('colorpicker:closed', self);
+      self.$el.trigger('colorpicker:closed');
     }
     if (self.$inputEl) {
-      self.$inputEl.trigger('colorpicker:closed', self);
+      self.$inputEl.trigger('colorpicker:closed');
     }
     self.emit('local::closed colorPickerClosed', self);
   }
@@ -712,8 +744,8 @@ class ColorPicker extends Framework7Class {
         if (modalType === 'popup') backdrop = true;
       }
       const modalParams = {
-        targetEl: ($targetEl || $inputEl),
-        scrollToEl: params.scrollToInput ? ($targetEl || $inputEl) : undefined,
+        targetEl: $targetEl || $inputEl,
+        scrollToEl: params.scrollToInput ? $targetEl || $inputEl : undefined,
         content: colorPickerContent,
         backdrop,
         closeByBackdropClick: params.closeByBackdropClick,
@@ -721,12 +753,19 @@ class ColorPicker extends Framework7Class {
           open() {
             const modal = this;
             self.modal = modal;
-            self.$el = modalType === 'popover' || modalType === 'popup' ? modal.$el.find('.color-picker') : modal.$el;
+            self.$el =
+              modalType === 'popover' || modalType === 'popup'
+                ? modal.$el.find('.color-picker')
+                : modal.$el;
             self.$el[0].f7ColorPicker = self;
             self.onOpen();
           },
-          opened() { self.onOpened(); },
-          close() { self.onClose(); },
+          opened() {
+            self.onOpened();
+          },
+          close() {
+            self.onClose();
+          },
           closed() {
             self.onClosed();
             if (self.$el && self.$el[0]) {
@@ -736,7 +775,15 @@ class ColorPicker extends Framework7Class {
           },
         },
       };
-      if (params.routableModals) {
+      if (modalType === 'popup') {
+        modalParams.push = params.popupPush;
+        modalParams.swipeToClose = params.popupSwipeToClose;
+      }
+      if (modalType === 'sheet') {
+        modalParams.push = params.sheetPush;
+        modalParams.swipeToClose = params.sheetSwipeToClose;
+      }
+      if (params.routableModals && self.view) {
         self.view.router.navigate({
           url: self.url,
           route: {
@@ -760,7 +807,7 @@ class ColorPicker extends Framework7Class {
       self.onClosed();
       return;
     }
-    if (self.params.routableModals) {
+    if ((self.params.routableModals && self.view) || self.params.openIn === 'page') {
       self.view.router.back();
     } else {
       self.modal.close();
@@ -800,7 +847,7 @@ class ColorPicker extends Framework7Class {
     if (self.destroyed) return;
     const { $el } = self;
     self.emit('local::beforeDestroy colorPickerBeforeDestroy', self);
-    if ($el) $el.trigger('colorpicker:beforedestroy', self);
+    if ($el) $el.trigger('colorpicker:beforedestroy');
 
     self.close();
 
@@ -817,7 +864,7 @@ class ColorPicker extends Framework7Class {
     }
 
     if ($el && $el.length) delete self.$el[0].f7ColorPicker;
-    Utils.deleteProps(self);
+    deleteProps(self);
     self.destroyed = true;
   }
 }

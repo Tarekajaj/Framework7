@@ -1,5 +1,5 @@
 /* === Preloader === */
-@import url('./preloader-vars.less');
+@import './preloader-vars.less';
 
 .preloader {
   display: inline-block;
@@ -8,6 +8,12 @@
   height: var(--f7-preloader-size);
   font-size: 0;
   position: relative;
+  .preloader-inner {
+    width: 100%;
+    height: 100%;
+    display: block;
+    position: relative;
+  }
 }
 
 /* === Preloader Modal === */
@@ -32,20 +38,23 @@
     display: block !important;
   }
 }
-html.with-modal-preloader {
-  .page-content {
-    .not-scrollable();
-  }
+html.with-modal-preloader .page-content,
+.with-modal-preloader .page-content,
+.with-modal-preloader.page-content {
+  .not-scrollable();
 }
-.preloader[class*="color-"] {
+.preloader[class*='color-'] {
   --f7-preloader-color: var(--f7-theme-color);
 }
+.preloader.color-white {
+  --f7-preloader-color: #fff;
+}
+.preloader.color-black {
+  --f7-preloader-color: #000;
+}
 .if-ios-theme({
-  @import url('./preloader-ios.less');
+  @import './preloader-ios.less';
 });
 .if-md-theme({
-  @import url('./preloader-md.less');
-});
-.if-aurora-theme({
-  @import url('./preloader-aurora.less');
+  @import './preloader-md.less';
 });

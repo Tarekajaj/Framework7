@@ -1,13 +1,15 @@
-import $ from 'dom7';
-import Utils from '../../utils/utils';
-import Framework7Class from '../../utils/class';
-import Support from '../../utils/support';
-import Device from '../../utils/device';
+import $ from '../../shared/dom7.js';
+import { deleteProps } from '../../shared/utils.js';
+import Framework7Class from '../../shared/class.js';
+import { getSupport } from '../../shared/get-support.js';
+import { getDevice } from '../../shared/get-device.js';
 
 class PullToRefresh extends Framework7Class {
   constructor(app, el) {
     super({}, [app]);
     const ptr = this;
+    const device = getDevice();
+    const support = getSupport();
     const $el = $(el);
     const $preloaderEl = $el.find('.ptr-preloader');
 
@@ -22,17 +24,19 @@ class PullToRefresh extends Framework7Class {
 
     const isMaterial = app.theme === 'md';
     const isIos = app.theme === 'ios';
-    const isAurora = app.theme === 'aurora';
 
     // Done
     ptr.done = function done() {
       const $transitionTarget = isMaterial ? $preloaderEl : $el;
-      $transitionTarget.transitionEnd(() => {
-        $el.removeClass('ptr-transitioning ptr-pull-up ptr-pull-down');
+      const onTranstionEnd = (e) => {
+        if ($(e.target).closest($preloaderEl).length) return;
+        $el.removeClass('ptr-transitioning ptr-pull-up ptr-pull-down ptr-closing');
         $el.trigger('ptr:done');
         ptr.emit('local::done ptrDone', $el[0]);
-      });
-      $el.removeClass('ptr-refreshing').addClass('ptr-transitioning');
+        $transitionTarget.off('transitionend', onTranstionEnd);
+      };
+      $transitionTarget.on('transitionend', onTranstionEnd);
+      $el.removeClass('ptr-refreshing').addClass('ptr-transitioning ptr-closing');
       return ptr;
     };
 
@@ -70,8 +74,28 @@ class PullToRefresh extends Framework7Class {
     let maxScrollTop;
     const $pageEl = $el.parents('.page');
 
-    if ($pageEl.find('.navbar').length > 0 || $pageEl.parents('.view').children('.navbar').length > 0) hasNavbar = true;
+    if (
+      $pageEl.find('.navbar').length > 0 ||
+      $pageEl.parents('.view').children('.navbars').length > 0
+    )
+      hasNavbar = true;
     if ($pageEl.hasClass('no-navbar')) hasNavbar = false;
+    if (!ptr.bottom) {
+      const pageNavbarEl = app.navbar.getElByPage($pageEl[0]);
+      if (pageNavbarEl) {
+        const $pageNavbarEl = $(pageNavbarEl);
+        const isLargeTransparent =
+          $pageNavbarEl.hasClass('navbar-large-transparent') ||
+          ($pageNavbarEl.hasClass('navbar-large') && $pageNavbarEl.hasClass('navbar-transparent'));
+        const isTransparent =
+          $pageNavbarEl.hasClass('navbar-transparent') && !$pageNavbarEl.hasClass('navbar-large');
+        if (isLargeTransparent) {
+          $el.addClass('ptr-with-navbar-large-transparent');
+        } else if (isTransparent) {
+          $el.addClass('ptr-with-navbar-transparent');
+        }
+      }
+    }
     if (!hasNavbar && !ptr.bottom) $el.addClass('ptr-no-navbar');
 
     // Define trigger distance
@@ -81,13 +105,26 @@ class PullToRefresh extends Framework7Class {
       triggerDistance = 66;
     } else if (isIos) {
       triggerDistance = 44;
-    } else if (isAurora) {
-      triggerDistance = 38;
+    }
+
+    function setPreloaderProgress(progress = 0) {
+      const $bars = $preloaderEl.find('.preloader-inner-line');
+      const perBarProgress = 1 / $bars.length;
+
+      $bars.forEach((barEl, barIndex) => {
+        const barProgress = (progress - barIndex * perBarProgress) / perBarProgress;
+        barEl.style.opacity = Math.max(Math.min(barProgress, 1), 0) * 0.27;
+      });
+    }
+
+    function unsetPreloaderProgress() {
+      $preloaderEl.find('.preloader-inner-line').css('opacity', '');
     }
 
     function handleTouchStart(e) {
+      if (!e.isTrusted) return;
       if (isTouched) {
-        if (Device.os === 'android') {
+        if (device.os === 'android') {
           if ('targetTouches' in e && e.targetTouches.length > 1) return;
         } else return;
       }
@@ -95,7 +132,10 @@ class PullToRefresh extends Framework7Class {
       if ($el.hasClass('ptr-refreshing')) {
         return;
       }
-      if ($(e.target).closest('.sortable-handler, .ptr-ignore, .card-expandable.card-opened').length) return;
+      if (
+        $(e.target).closest('.sortable-handler, .ptr-ignore, .card-expandable.card-opened').length
+      )
+        return;
 
       isMoved = false;
       pullStarted = false;
@@ -108,7 +148,7 @@ class PullToRefresh extends Framework7Class {
     }
 
     function handleTouchMove(e) {
-      if (!isTouched) return;
+      if (!isTouched || !e.isTrusted) return;
       let pageX;
       let pageY;
       let touch;
@@ -129,9 +169,10 @@ class PullToRefresh extends Framework7Class {
       }
       if (!pageX || !pageY) return;
 
-
       if (typeof isScrolling === 'undefined') {
-        isScrolling = !!(isScrolling || Math.abs(pageY - touchesStart.y) > Math.abs(pageX - touchesStart.x));
+        isScrolling = !!(
+          isScrolling || Math.abs(pageY - touchesStart.y) > Math.abs(pageX - touchesStart.x)
+        );
       }
       if (!isScrolling) {
         isTouched = false;
@@ -142,6 +183,9 @@ class PullToRefresh extends Framework7Class {
 
       if (!isMoved) {
         $el.removeClass('ptr-transitioning');
+        if (isIos) {
+          setPreloaderProgress(0);
+        }
         let targetIsScrollable;
         scrollHeight = $el[0].scrollHeight;
         offsetHeight = $el[0].offsetHeight;
@@ -154,15 +198,15 @@ class PullToRefresh extends Framework7Class {
         }
         const $ptrWatchScrollable = $(e.target).closest('.ptr-watch-scroll');
         if ($ptrWatchScrollable.length) {
-          $ptrWatchScrollable.each((ptrScrollableIndex, ptrScrollableEl) => {
+          $ptrWatchScrollable.each((ptrScrollableEl) => {
             if (ptrScrollableEl === el) return;
             if (
-              (ptrScrollableEl.scrollHeight > ptrScrollableEl.offsetHeight)
-              && $(ptrScrollableEl).css('overflow') === 'auto'
-              && (
-                (!ptr.bottom && ptrScrollableEl.scrollTop > 0)
-                || (ptr.bottom && ptrScrollableEl.scrollTop < ptrScrollableEl.scrollHeight - ptrScrollableEl.offsetHeight)
-              )
+              ptrScrollableEl.scrollHeight > ptrScrollableEl.offsetHeight &&
+              $(ptrScrollableEl).css('overflow') === 'auto' &&
+              ((!ptr.bottom && ptrScrollableEl.scrollTop > 0) ||
+                (ptr.bottom &&
+                  ptrScrollableEl.scrollTop <
+                    ptrScrollableEl.scrollHeight - ptrScrollableEl.offsetHeight))
             ) {
               targetIsScrollable = true;
             }
@@ -174,10 +218,11 @@ class PullToRefresh extends Framework7Class {
         }
         if (dynamicTriggerDistance) {
           triggerDistance = $el.attr('data-ptr-distance');
-          if (triggerDistance.indexOf('%') >= 0) triggerDistance = (scrollHeight * parseInt(triggerDistance, 10)) / 100;
+          if (triggerDistance.indexOf('%') >= 0)
+            triggerDistance = (scrollHeight * parseInt(triggerDistance, 10)) / 100;
         }
         startTranslate = $el.hasClass('ptr-refreshing') ? triggerDistance : 0;
-        if (scrollHeight === offsetHeight || Device.os !== 'ios' || isMaterial) {
+        if (scrollHeight === offsetHeight || device.os !== 'ios' || isMaterial) {
           useTranslate = true;
         } else {
           useTranslate = false;
@@ -187,7 +232,11 @@ class PullToRefresh extends Framework7Class {
       isMoved = true;
       touchesDiff = pageY - touchesStart.y;
 
-      if (typeof wasScrolled === 'undefined' && (ptr.bottom ? scrollTop !== maxScrollTop : scrollTop !== 0)) wasScrolled = true;
+      if (
+        typeof wasScrolled === 'undefined' &&
+        (ptr.bottom ? scrollTop !== maxScrollTop : scrollTop !== 0)
+      )
+        wasScrolled = true;
 
       const ptrStarted = ptr.bottom
         ? (touchesDiff < 0 && scrollTop >= maxScrollTop) || scrollTop > maxScrollTop
@@ -195,7 +244,7 @@ class PullToRefresh extends Framework7Class {
 
       if (ptrStarted) {
         // iOS 8 fix
-        if (Device.os === 'ios' && parseInt(Device.osVersion.split('.')[0], 10) > 7) {
+        if (device.os === 'ios' && parseInt(device.osVersion.split('.')[0], 10) > 7) {
           if (!ptr.bottom && scrollTop === 0 && !wasScrolled) useTranslate = true;
           if (ptr.bottom && scrollTop === maxScrollTop && !wasScrolled) useTranslate = true;
         }
@@ -210,23 +259,47 @@ class PullToRefresh extends Framework7Class {
           if (e.cancelable) {
             e.preventDefault();
           }
-          translate = (ptr.bottom ? -1 * (Math.abs(touchesDiff) ** 0.85) : touchesDiff ** 0.85) + startTranslate;
+          translate =
+            (ptr.bottom ? -1 * Math.abs(touchesDiff) ** 0.85 : touchesDiff ** 0.85) +
+            startTranslate;
           if (isMaterial) {
-            $preloaderEl.transform(`translate3d(0,${translate}px,0)`)
-              .find('.ptr-arrow').transform(`rotate(${(180 * (Math.abs(touchesDiff) / 66)) + 100}deg)`);
+            $preloaderEl
+              .transform(`translate3d(0,${translate}px,0)`)
+              .find('.ptr-arrow')
+              .transform(`rotate(${180 * (Math.abs(touchesDiff) / 66) + 100}deg)`);
           } else {
             // eslint-disable-next-line
-            if (ptr.bottom) {
+            if (ptr.bottom || isIos) {
               $el.children().transform(`translate3d(0,${translate}px,0)`);
             } else {
+              // eslint-disable-next-line
               $el.transform(`translate3d(0,${translate}px,0)`);
             }
+            if (isIos) {
+              $preloaderEl.transform(`translate3d(0,0px,0)`);
+            }
           }
+        } else if (isIos && !ptr.bottom) {
+          $preloaderEl.transform(`translate3d(0,${scrollTop}px,0)`);
         }
 
-        if (((useTranslate || forceUseTranslate) && (Math.abs(touchesDiff) ** 0.85) > triggerDistance) || (!useTranslate && Math.abs(touchesDiff) >= triggerDistance * 2)) {
+        let progress;
+        if (isIos && !refresh) {
+          progress =
+            useTranslate || forceUseTranslate
+              ? Math.abs(touchesDiff) ** 0.85 / triggerDistance
+              : Math.abs(touchesDiff) / (triggerDistance * 2);
+          setPreloaderProgress(progress);
+        }
+
+        if (
+          ((useTranslate || forceUseTranslate) &&
+            Math.abs(touchesDiff) ** 0.85 > triggerDistance) ||
+          (!useTranslate && Math.abs(touchesDiff) >= triggerDistance * 2)
+        ) {
           refresh = true;
           $el.addClass('ptr-pull-up').removeClass('ptr-pull-down');
+          unsetPreloaderProgress();
         } else {
           refresh = false;
           $el.removeClass('ptr-pull-up').addClass('ptr-pull-down');
@@ -255,6 +328,8 @@ class PullToRefresh extends Framework7Class {
       }
     }
     function handleTouchEnd(e) {
+      if (!e.isTrusted) return;
+
       if (e.type === 'touchend' && e.changedTouches && e.changedTouches.length > 0 && touchId) {
         if (e.changedTouches[0].identifier !== touchId) {
           isTouched = false;
@@ -274,11 +349,10 @@ class PullToRefresh extends Framework7Class {
         translate = 0;
       }
       if (isMaterial) {
-        $preloaderEl.transform('')
-          .find('.ptr-arrow').transform('');
+        $preloaderEl.transform('').find('.ptr-arrow').transform('');
       } else {
-        // eslint-disable-next-line
-        if (ptr.bottom) {
+        $preloaderEl.transform('');
+        if (ptr.bottom || isIos) {
           $el.children().transform('');
         } else {
           $el.transform('');
@@ -318,10 +392,9 @@ class PullToRefresh extends Framework7Class {
         translate = 0;
       }
       if (isMaterial) {
-        $preloaderEl.transform('')
-          .find('.ptr-arrow').transform('');
+        $preloaderEl.transform('').find('.ptr-arrow').transform('');
       } else {
-        // eslint-disable-next-line
+        $preloaderEl.transform('');
         if (ptr.bottom) {
           $el.children().transform('');
         } else {
@@ -348,7 +421,10 @@ class PullToRefresh extends Framework7Class {
       if ($el.hasClass('ptr-refreshing')) {
         return;
       }
-      if ($(e.target).closest('.sortable-handler, .ptr-ignore, .card-expandable.card-opened').length) return;
+      if (
+        $(e.target).closest('.sortable-handler, .ptr-ignore, .card-expandable.card-opened').length
+      )
+        return;
 
       clearTimeout(mousewheelTimeout);
 
@@ -356,6 +432,9 @@ class PullToRefresh extends Framework7Class {
 
       if (!mousewheelMoved) {
         $el.removeClass('ptr-transitioning');
+        if (isIos) {
+          setPreloaderProgress(0);
+        }
         let targetIsScrollable;
         scrollHeight = $el[0].scrollHeight;
         offsetHeight = $el[0].offsetHeight;
@@ -368,15 +447,15 @@ class PullToRefresh extends Framework7Class {
         }
         const $ptrWatchScrollable = $(e.target).closest('.ptr-watch-scroll');
         if ($ptrWatchScrollable.length) {
-          $ptrWatchScrollable.each((ptrScrollableIndex, ptrScrollableEl) => {
+          $ptrWatchScrollable.each((ptrScrollableEl) => {
             if (ptrScrollableEl === el) return;
             if (
-              (ptrScrollableEl.scrollHeight > ptrScrollableEl.offsetHeight)
-              && $(ptrScrollableEl).css('overflow') === 'auto'
-              && (
-                (!ptr.bottom && ptrScrollableEl.scrollTop > 0)
-                || (ptr.bottom && ptrScrollableEl.scrollTop < ptrScrollableEl.scrollHeight - ptrScrollableEl.offsetHeight)
-              )
+              ptrScrollableEl.scrollHeight > ptrScrollableEl.offsetHeight &&
+              $(ptrScrollableEl).css('overflow') === 'auto' &&
+              ((!ptr.bottom && ptrScrollableEl.scrollTop > 0) ||
+                (ptr.bottom &&
+                  ptrScrollableEl.scrollTop <
+                    ptrScrollableEl.scrollHeight - ptrScrollableEl.offsetHeight))
             ) {
               targetIsScrollable = true;
             }
@@ -388,14 +467,19 @@ class PullToRefresh extends Framework7Class {
         }
         if (dynamicTriggerDistance) {
           triggerDistance = $el.attr('data-ptr-distance');
-          if (triggerDistance.indexOf('%') >= 0) triggerDistance = (scrollHeight * parseInt(triggerDistance, 10)) / 100;
+          if (triggerDistance.indexOf('%') >= 0)
+            triggerDistance = (scrollHeight * parseInt(triggerDistance, 10)) / 100;
         }
       }
       isMoved = true;
       mousewheelTranslate -= deltaY;
       touchesDiff = mousewheelTranslate; // pageY - touchesStart.y;
 
-      if (typeof wasScrolled === 'undefined' && (ptr.bottom ? scrollTop !== maxScrollTop : scrollTop !== 0)) wasScrolled = true;
+      if (
+        typeof wasScrolled === 'undefined' &&
+        (ptr.bottom ? scrollTop !== maxScrollTop : scrollTop !== 0)
+      )
+        wasScrolled = true;
 
       const ptrStarted = ptr.bottom
         ? (touchesDiff < 0 && scrollTop >= maxScrollTop) || scrollTop > maxScrollTop
@@ -408,25 +492,37 @@ class PullToRefresh extends Framework7Class {
 
         translate = touchesDiff;
         if (Math.abs(translate) > triggerDistance) {
-          translate = triggerDistance + ((Math.abs(translate) - triggerDistance) ** 0.7);
+          translate = triggerDistance + (Math.abs(translate) - triggerDistance) ** 0.7;
           if (ptr.bottom) translate = -translate;
         }
 
         if (isMaterial) {
-          $preloaderEl.transform(`translate3d(0,${translate}px,0)`)
-            .find('.ptr-arrow').transform(`rotate(${(180 * (Math.abs(touchesDiff) / 66)) + 100}deg)`);
+          $preloaderEl
+            .transform(`translate3d(0,${translate}px,0)`)
+            .find('.ptr-arrow')
+            .transform(`rotate(${180 * (Math.abs(touchesDiff) / 66) + 100}deg)`);
         } else {
           // eslint-disable-next-line
           if (ptr.bottom) {
             $el.children().transform(`translate3d(0,${translate}px,0)`);
           } else {
             $el.transform(`translate3d(0,${translate}px,0)`);
+            if (isIos) {
+              $preloaderEl.transform(`translate3d(0,${-translate}px,0)`);
+            }
           }
+        }
+
+        let progress;
+        if (isIos && !refresh) {
+          progress = Math.abs(translate) / triggerDistance;
+          setPreloaderProgress(progress);
         }
 
         if (Math.abs(translate) > triggerDistance) {
           refresh = true;
           $el.addClass('ptr-pull-up').removeClass('ptr-pull-down');
+          unsetPreloaderProgress();
         } else {
           refresh = false;
           $el.removeClass('ptr-pull-up').addClass('ptr-pull-down');
@@ -463,7 +559,7 @@ class PullToRefresh extends Framework7Class {
 
     // Events
     ptr.attachEvents = function attachEvents() {
-      const passive = Support.passiveListener ? { passive: true } : false;
+      const passive = support.passiveListener ? { passive: true } : false;
       $el.on(app.touchEvents.start, handleTouchStart, passive);
       app.on('touchmove:active', handleTouchMove);
       app.on('touchend:passive', handleTouchEnd);
@@ -472,7 +568,7 @@ class PullToRefresh extends Framework7Class {
       }
     };
     ptr.detachEvents = function detachEvents() {
-      const passive = Support.passiveListener ? { passive: true } : false;
+      const passive = support.passiveListener ? { passive: true } : false;
       $el.off(app.touchEvents.start, handleTouchStart, passive);
       app.off('touchmove:active', handleTouchMove);
       app.off('touchend:passive', handleTouchEnd);
@@ -498,10 +594,10 @@ class PullToRefresh extends Framework7Class {
   destroy() {
     let ptr = this;
     ptr.emit('local::beforeDestroy ptrBeforeDestroy', ptr);
-    ptr.$el.trigger('ptr:beforedestroy', ptr);
+    ptr.$el.trigger('ptr:beforedestroy');
     delete ptr.el.f7PullToRefresh;
     ptr.detachEvents();
-    Utils.deleteProps(ptr);
+    deleteProps(ptr);
     ptr = null;
   }
 }

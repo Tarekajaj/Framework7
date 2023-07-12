@@ -1,5 +1,5 @@
 /* === Timeline === */
-@import url('./timeline-vars.less');
+@import './timeline-vars.less';
 
 .timeline {
   box-sizing: border-box;
@@ -40,16 +40,31 @@
   min-width: 0;
   position: relative;
   flex-shrink: 10;
-  .card, &.card, .list, &.list, .block, &.block {
+  .card,
+  &.card,
+  .list,
+  &.list,
+  .block,
+  &.block {
     margin: 0;
     width: 100%;
   }
-  .card, .list, .block {
-    + .card, + .list, + .block {
+  .card,
+  .list,
+  .block {
+    + .card,
+    + .list,
+    + .block {
       margin: var(--f7-timeline-inner-block-margin-vertical) 0 0;
     }
   }
-  p, ul, ol, h1, h2, h3, h4 {
+  p,
+  ul,
+  ol,
+  h1,
+  h2,
+  h3,
+  h4 {
     &:first-child {
       margin-top: 0;
     }
@@ -63,7 +78,6 @@
   box-sizing: border-box;
   border-radius: var(--f7-timeline-item-inner-border-radius);
   padding: 8px var(--f7-timeline-padding-horizontal);
-  box-shadow: var(--f7-timeline-item-inner-box-shadow);
 
   + .timeline-item-inner {
     margin-top: var(--f7-timeline-inner-block-margin-vertical);
@@ -73,30 +87,28 @@
     color: inherit;
   }
   .block-strong {
-    .hairline-remove(top);
-    .hairline-remove(bottom);
+    .hairline-remove-top-bottom();
     padding-left: 0;
     padding-right: 0;
     margin: 0;
   }
   .list {
     ul {
-      .hairline-remove(top);
-      .hairline-remove(bottom);
+      .hairline-remove-top-bottom();
     }
   }
-
 }
 .timeline-item-divider {
   width: 1px;
   position: relative;
   width: 10px;
   height: 10px;
-  background: #bbb;
+  background: var(--f7-timeline-divider-color);
   border-radius: 50%;
   flex-shrink: 0;
   margin: 3px var(--f7-timeline-divider-margin-horizontal) 0;
-  &:after, &:before {
+  &:after,
+  &:before {
     content: ' ';
     width: 1px;
     height: 100vh;
@@ -122,7 +134,8 @@
   font-size: var(--f7-timeline-item-time-font-size);
   margin-top: var(--f7-timeline-inner-block-margin-vertical);
   color: var(--f7-timeline-item-time-text-color);
-  &:first-child, &:last-child {
+  &:first-child,
+  &:last-child {
     margin-top: 0;
   }
   .timeline-item-title + & {
@@ -188,11 +201,13 @@
     .timelineItemLeft();
   }
 }
-@media (min-width:768px) {
-  .tablet-sides {
-    .timeline-sides;
+each(@breakpoints, {
+  @media (min-width:@value) {
+    .@{key}-sides {
+      .timeline-sides;
+    }
   }
-}
+});
 
 .timeline-horizontal {
   height: 100%;
@@ -224,10 +239,10 @@
     top: 0;
     width: 100%;
     height: var(--f7-timeline-horizontal-date-height);
-    background-color: var(--f7-bars-bg-color, var(--f7-theme-color));
+    background-color: var(--f7-bars-bg-color);
     color: var(--f7-bars-text-color);
+    .ios-translucent-bars(var(--f7-bars-bg-color-rgb));
     .hairline(bottom, var(--f7-timeline-horizontal-item-date-border-color));
-    .bar-shadow-bottom(var(--f7-timeline-horizontal-item-date-shadow-image));
     .ltr({
       text-align: left;
     });
@@ -235,12 +250,10 @@
       text-align: right;
     });
   }
-  &.no-shadow .timeline-item-date:before {
-    display: none;
-  }
+
   .timeline-item-content {
     padding: var(--f7-timeline-horizontal-item-padding);
-    height: calc(100% - var(--f7-timeline-horizontal-item-padding));
+    height: calc(100vw - var(--f7-timeline-horizontal-item-padding));
     .scrollable();
     margin: 0;
   }
@@ -251,20 +264,45 @@
   .timeline-month:last-child .timeline-item:last-child {
     .hairline-remove(right);
   }
-
-  @cols: 5, 10, 15, 20, 25, 30, 100/3, 35, 40, 45, 50, 55, 60, 65, 100*(2/3), 70, 75, 80, 85, 90, 95, 100;
+  @cols: 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20;
   each(@cols, {
-    @className: framework7_floor(@value);
-    &.col-@{className} .timeline-item {
-      width: ~"@{value}vw";
+    @className: floor((@value));
+    &.timeline-cols-@{className} .timeline-item {
+      width: ~"calc(100vw / @{value})";
     }
   });
-
-  @media (min-width:768px) {
+  @media (min-width: @breakpoints[xsmall]) {
     each(@cols, {
-      @className: framework7_floor(@value);
-      &.tablet-@{className} .timeline-item {
-        width: ~"@{value}vw";
+      &.xsmall-timeline-cols-@{value} .timeline-item {
+         width: ~"calc(100vw / @{value})";
+      }
+    });
+  }
+  @media (min-width: @breakpoints[small]) {
+    each(@cols, {
+      &.small-timeline-cols-@{value} .timeline-item {
+         width: ~"calc(100vw / @{value})";
+      }
+    });
+  }
+  @media (min-width: @breakpoints[medium]) {
+    each(@cols, {
+      &.medium-timeline-cols-@{value} .timeline-item {
+         width: ~"calc(100vw / @{value})";
+      }
+    });
+  }
+  @media (min-width: @breakpoints[large]) {
+    each(@cols, {
+      &.large-timeline-cols-@{value} .timeline-item {
+         width: ~"calc(100vw / @{value})";
+      }
+    });
+  }
+  @media (min-width: @breakpoints[xlarge]) {
+    each(@cols, {
+      &.xlarge-timeline-cols-@{value} .timeline-item {
+         width: ~"calc(100vw / @{value})";
       }
     });
   }
@@ -282,7 +320,8 @@
     .hairline(top, var(--f7-timeline-horizontal-item-border-color));
   }
 }
-.timeline-year, .timeline-month {
+.timeline-year,
+.timeline-month {
   display: flex;
   flex-shrink: 0;
   position: relative;
@@ -301,15 +340,17 @@
   font-size: var(--f7-timeline-month-font-size);
   font-weight: var(--f7-timeline-month-font-weight);
 }
-.timeline-year-title, .timeline-month-title {
+.timeline-year-title,
+.timeline-month-title {
   position: absolute;
   left: 0;
   top: 0;
   width: 100%;
   box-sizing: border-box;
   padding: 0 var(--f7-timeline-horizontal-item-padding);
-  background-color: var(--f7-bars-bg-color, var(--f7-theme-color));
+  background-color: var(--f7-bars-bg-color);
   color: var(--f7-bars-text-color);
+  .ios-translucent-bars(var(--f7-bars-bg-color-rgb));
   span {
     display: inline-block;
     position: sticky;
@@ -336,7 +377,11 @@
 .timeline-horizontal .timeline-item:first-child,
 .timeline-year:first-child .timeline-month:first-child .timeline-item:first-child,
 .timeline-year:first-child .timeline-year-title + .timeline-month .timeline-item:first-child,
-.timeline-year:first-child .timeline-year-title + .timeline-month .timeline-month-title + .timeline-item {
+.timeline-year:first-child
+  .timeline-year-title
+  + .timeline-month
+  .timeline-month-title
+  + .timeline-item {
   overflow: visible;
   .timeline-item-date {
     width: auto;
@@ -361,11 +406,8 @@
 }
 
 .if-ios-theme({
-  @import url('./timeline-ios.less');
+  @import './timeline-ios.less';
 });
 .if-md-theme({
-  @import url('./timeline-md.less');
-});
-.if-aurora-theme({
-  @import url('./timeline-aurora.less');
+  @import './timeline-md.less';
 });

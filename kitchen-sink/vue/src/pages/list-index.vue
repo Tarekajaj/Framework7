@@ -8,7 +8,7 @@
       :label="true"
       @listindex:select="onIndexSelect"
     ></f7-list-index>
-    <f7-list contacts-list>
+    <f7-list contacts-list strong-ios dividers-ios>
       <f7-list-group>
         <f7-list-item title="A" group-title></f7-list-item>
         <f7-list-item title="Aaron"></f7-list-item>
@@ -173,16 +173,22 @@
   </f7-page>
 </template>
 <script>
-  import { f7Page, f7Navbar, f7List, f7ListGroup, f7ListItem, f7ListIndex } from 'framework7-vue';
+import { f7Page, f7Navbar, f7List, f7ListGroup, f7ListItem, f7ListIndex } from 'framework7-vue';
 
-  export default {
-    components: {
-      f7Page, f7Navbar, f7List, f7ListGroup, f7ListItem, f7ListIndex,
+export default {
+  components: {
+    f7Page,
+    f7Navbar,
+    f7List,
+    f7ListGroup,
+    f7ListItem,
+    f7ListIndex,
+  },
+  methods: {
+    onIndexSelect(itemContent) {
+      // eslint-disable-next-line
+      console.log(itemContent);
     },
-    methods: {
-      onIndexSelect(itemContent) {
-        console.log(itemContent);
-      },
-    },
-  };
+  },
+};
 </script>

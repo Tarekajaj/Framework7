@@ -1,29 +1,30 @@
-:root {
-  --f7-toggle-handle-color: #fff;
-}
 .ios-vars({
   --f7-toggle-width: 52px;
   --f7-toggle-height: 32px;
-  --f7-toggle-border-color: #e5e5e5;
-  --f7-toggle-inactive-color: #fff;
-  .theme-dark, &.theme-dark {
-    --f7-toggle-border-color: #555;
-    --f7-toggle-inactive-color: #222;
-  }
+  /*
+  --f7-toggle-active-bg-color: var(--f7-theme-color);
+  */
+  --f7-toggle-inactive-knob-bg-color: #fff;
+  --f7-toggle-active-knob-bg-color: #fff;
+
+  .light-vars({
+    --f7-toggle-inactive-border-color: #e5e5e5;
+    --f7-toggle-inactive-bg-color: #fff;
+  });
+  .dark-vars({
+    --f7-toggle-inactive-border-color: #555;
+    --f7-toggle-inactive-bg-color: #555;
+  });
 });
 .md-vars({
-  --f7-toggle-width: 36px;
-  --f7-toggle-height: 14px;
-  --f7-toggle-inactive-color: #b0afaf;
-  .theme-dark, &.theme-dark {
-    --f7-toggle-inactive-color: #555;
-  }
+  --f7-toggle-width: 52px;
+  --f7-toggle-height: 32px;
 });
-.aurora-vars({
-  --f7-toggle-width: 40px;
-  --f7-toggle-height: 20px;
-  --f7-toggle-inactive-color: #aaa;
-  .theme-dark, &.theme-dark {
-    --f7-toggle-inactive-color: #555;
-  }
+.md-color-vars({
+  --f7-toggle-inactive-bg-color: var(--f7-md-surface-variant);
+  --f7-toggle-active-bg-color: var(--f7-theme-color);
+  --f7-toggle-inactive-knob-bg-color: var(--f7-md-outline);
+  --f7-toggle-active-knob-bg-color: var(--f7-md-on-primary);
+  --f7-toggle-inactive-border-color: var(--f7-md-outline);
+  --f7-toggle-active-border-color: var(--f7-theme-color);
 });

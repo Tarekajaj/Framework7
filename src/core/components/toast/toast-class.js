@@ -1,18 +1,25 @@
-import $ from 'dom7';
-import { window } from 'ssr-window';
-import Utils from '../../utils/utils';
-import Modal from '../modal/modal-class';
+import { getWindow } from 'ssr-window';
+import $ from '../../shared/dom7.js';
+import { extend, nextTick } from '../../shared/utils.js';
+import Modal from '../modal/modal-class.js';
+/** @jsx $jsx */
+import $jsx from '../../shared/$jsx.js';
 
 class Toast extends Modal {
   constructor(app, params) {
-    const extendedParams = Utils.extend({
-      on: {},
-    }, app.params.toast, params);
+    const extendedParams = extend(
+      {
+        on: {},
+      },
+      app.params.toast,
+      params,
+    );
 
     // Extends with open/close Modal methods;
     super(app, extendedParams);
 
     const toast = this;
+    const window = getWindow();
 
     toast.app = app;
 
@@ -38,7 +45,7 @@ class Toast extends Modal {
       return toast.destroy();
     }
 
-    Utils.extend(toast, {
+    extend(toast, {
       $el,
       el: $el[0],
       type: 'toast',
@@ -59,14 +66,14 @@ class Toast extends Modal {
 
     let timeoutId;
     toast.on('open', () => {
-      $('.toast.modal-in').each((index, openedEl) => {
+      $('.toast.modal-in').each((openedEl) => {
         const toastInstance = app.toast.get(openedEl);
         if (openedEl !== toast.el && toastInstance) {
           toastInstance.close();
         }
       });
       if (closeTimeout) {
-        timeoutId = Utils.nextTick(() => {
+        timeoutId = nextTick(() => {
           toast.close();
         }, closeTimeout);
       }
@@ -89,18 +96,35 @@ class Toast extends Modal {
   render() {
     const toast = this;
     if (toast.params.render) return toast.params.render.call(toast, toast);
-    const { position, cssClass, icon, text, closeButton, closeButtonColor, closeButtonText } = toast.params;
-    return `
-      <div class="toast toast-${position} ${cssClass || ''} ${icon ? 'toast-with-icon' : ''}">
+    const {
+      position,
+      horizontalPosition,
+      cssClass,
+      icon,
+      text,
+      closeButton,
+      closeButtonColor,
+      closeButtonText,
+    } = toast.params;
+    const horizontalClass =
+      position === 'top' || position === 'bottom' ? `toast-horizontal-${horizontalPosition}` : '';
+    return (
+      <div
+        class={`toast toast-${position} ${horizontalClass} ${cssClass || ''} ${
+          icon ? 'toast-with-icon' : ''
+        }`}
+      >
         <div class="toast-content">
-          ${icon ? `<div class="toast-icon">${icon}</div>` : ''}
-          <div class="toast-text">${text}</div>
-          ${closeButton && !icon ? `
-          <a class="toast-button button ${closeButtonColor ? `color-${closeButtonColor}` : ''}">${closeButtonText}</a>
-          `.trim() : ''}
+          {icon && <div class="toast-icon">{icon}</div>}
+          <div class="toast-text">{text}</div>
+          {closeButton && !icon && (
+            <a class={`toast-button button ${closeButtonColor ? `color-${closeButtonColor}` : ''}`}>
+              {closeButtonText}
+            </a>
+          )}
         </div>
       </div>
-    `.trim();
+    );
   }
 }
 export default Toast;

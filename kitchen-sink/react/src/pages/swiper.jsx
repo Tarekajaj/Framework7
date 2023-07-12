@@ -2,17 +2,19 @@ import React from 'react';
 import { Navbar, Page, Block, List, ListItem } from 'framework7-react';
 
 export default () => (
-
   <Page>
     <Navbar title="Swiper Slider" backLink="Back"></Navbar>
     <Block>
       <p>
-        Framework7 comes with powerful and most modern touch slider ever -
-        <a href="http://idangero.us/swiper" className="external" target="_blank">Swiper Slider</a>
+        Framework7 comes with powerful and most modern touch slider ever -<span> </span>
+        <a href="https://swiperjs.com" className="external" target="_blank">
+          Swiper Slider
+        </a>
+        <span> </span>
         with super flexible configuration and lot, lot of features. Just check the following demos:
       </p>
     </Block>
-    <List>
+    <List strong insetMd outlineIos dividersIos>
       <ListItem link="swiper-horizontal/" title="Swiper Horizontal" />
       <ListItem link="swiper-vertical/" title="Swiper Vertical" />
       <ListItem link="swiper-space-between/" title="Space Between Slides" />
@@ -25,7 +27,6 @@ export default () => (
       <ListItem link="swiper-fade/" title="Fade Effect" />
       <ListItem link="swiper-scrollbar/" title="With Scrollbar" />
       <ListItem link="swiper-gallery/" title="Thumbs Gallery" />
-      <ListItem link="swiper-custom-controls/" title="Custom Controls" />
       <ListItem link="swiper-parallax/" title="Parallax" />
       <ListItem link="swiper-lazy/" title="Lazy Loading" />
       <ListItem link="swiper-pagination-progress/" title="Progress Pagination" />
@@ -33,5 +34,4 @@ export default () => (
       <ListItem link="swiper-zoom/" title="Zoom" />
     </List>
   </Page>
-
 );

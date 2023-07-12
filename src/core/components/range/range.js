@@ -1,13 +1,13 @@
-import $ from 'dom7';
-import Utils from '../../utils/utils';
-import Range from './range-class';
-import ConstructorMethods from '../../utils/constructor-methods';
+import $ from '../../shared/dom7.js';
+import { extend } from '../../shared/utils.js';
+import Range from './range-class.js';
+import ConstructorMethods from '../../shared/constructor-methods.js';
 
 export default {
   name: 'range',
   create() {
     const app = this;
-    app.range = Utils.extend(
+    app.range = extend(
       ConstructorMethods({
         defaultSelector: '.range-slider',
         constructor: Range,
@@ -25,7 +25,7 @@ export default {
           if (range) return range.setValue(value);
           return undefined;
         },
-      }
+      },
     );
   },
   static: {
@@ -34,23 +34,33 @@ export default {
   on: {
     tabMounted(tabEl) {
       const app = this;
-      $(tabEl).find('.range-slider-init').each((index, rangeEl) => new Range(app, {
-        el: rangeEl,
-      }));
+      $(tabEl)
+        .find('.range-slider-init')
+        .each(
+          (rangeEl) =>
+            new Range(app, {
+              el: rangeEl,
+            }),
+        );
     },
     tabBeforeRemove(tabEl) {
-      $(tabEl).find('.range-slider-init').each((index, rangeEl) => {
-        if (rangeEl.f7Range) rangeEl.f7Range.destroy();
-      });
+      $(tabEl)
+        .find('.range-slider-init')
+        .each((rangeEl) => {
+          if (rangeEl.f7Range) rangeEl.f7Range.destroy();
+        });
     },
     pageInit(page) {
       const app = this;
-      page.$el.find('.range-slider-init').each((index, rangeEl) => new Range(app, {
-        el: rangeEl,
-      }));
+      page.$el.find('.range-slider-init').each(
+        (rangeEl) =>
+          new Range(app, {
+            el: rangeEl,
+          }),
+      );
     },
     pageBeforeRemove(page) {
-      page.$el.find('.range-slider-init').each((index, rangeEl) => {
+      page.$el.find('.range-slider-init').each((rangeEl) => {
         if (rangeEl.f7Range) rangeEl.f7Range.destroy();
       });
     },

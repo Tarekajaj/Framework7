@@ -5,9 +5,10 @@ import About from './pages/about.vue';
 
 import Accordion from './pages/accordion.vue';
 import ActionSheet from './pages/action-sheet.vue';
-import Appbar from './pages/appbar.vue';
+import AreaChart from './pages/area-chart.vue';
 import Autocomplete from './pages/autocomplete.vue';
 import Badge from './pages/badge.vue';
+import Breadcrumbs from './pages/breadcrumbs.vue';
 import Buttons from './pages/buttons.vue';
 import Calendar from './pages/calendar.vue';
 import CalendarPage from './pages/calendar-page.vue';
@@ -20,7 +21,6 @@ import ContactsList from './pages/contacts-list.vue';
 import ContentBlock from './pages/content-block.vue';
 import DataTable from './pages/data-table.vue';
 import Dialog from './pages/dialog.vue';
-import Elevation from './pages/elevation.vue';
 import Fab from './pages/fab.vue';
 import FabMorph from './pages/fab-morph.vue';
 import FormStorage from './pages/form-storage.vue';
@@ -29,12 +29,12 @@ import Grid from './pages/grid.vue';
 import Icons from './pages/icons.vue';
 import InfiniteScroll from './pages/infinite-scroll.vue';
 import Inputs from './pages/inputs.vue';
-import LazyLoad from './pages/lazy-load.vue';
+import ListButton from './pages/list-button.vue';
 import List from './pages/list.vue';
 import ListIndex from './pages/list-index.vue';
 import LoginScreen from './pages/login-screen.vue';
 import LoginScreenPage from './pages/login-screen-page.vue';
-import Menu from './pages/menu.vue';
+import MenuList from './pages/menu-list.vue';
 import Messages from './pages/messages.vue';
 import Navbar from './pages/navbar.vue';
 import NavbarHideScroll from './pages/navbar-hide-scroll.vue';
@@ -42,6 +42,7 @@ import Notifications from './pages/notifications.vue';
 import Panel from './pages/panel.vue';
 import PhotoBrowser from './pages/photo-browser.vue';
 import Picker from './pages/picker.vue';
+import PieChart from './pages/pie-chart.vue';
 import Popup from './pages/popup.vue';
 import Popover from './pages/popover.vue';
 import Preloader from './pages/preloader.vue';
@@ -51,11 +52,11 @@ import Radio from './pages/radio.vue';
 import Range from './pages/range.vue';
 import Searchbar from './pages/searchbar.vue';
 import SearchbarExpandable from './pages/searchbar-expandable.vue';
+import Segmented from './pages/segmented.vue';
 import SheetModal from './pages/sheet-modal.vue';
 import Skeleton from './pages/skeleton.vue';
 import SmartSelect from './pages/smart-select.vue';
 import Sortable from './pages/sortable.vue';
-import Statusbar from './pages/statusbar.vue';
 import Stepper from './pages/stepper.vue';
 import Subnavbar from './pages/subnavbar.vue';
 import SubnavbarTitle from './pages/subnavbar-title.vue';
@@ -72,7 +73,6 @@ import Swiper3dFlip from './pages/swiper-3d-flip.vue';
 import SwiperFade from './pages/swiper-fade.vue';
 import SwiperScrollbar from './pages/swiper-scrollbar.vue';
 import SwiperGallery from './pages/swiper-gallery.vue';
-import SwiperCustomControls from './pages/swiper-custom-controls.vue';
 import SwiperParallax from './pages/swiper-parallax.vue';
 import SwiperLazy from './pages/swiper-lazy.vue';
 import SwiperPaginationProgress from './pages/swiper-pagination-progress.vue';
@@ -84,11 +84,12 @@ import TabsStatic from './pages/tabs-static.vue';
 import TabsAnimated from './pages/tabs-animated.vue';
 import TabsSwipeable from './pages/tabs-swipeable.vue';
 import TabsRoutable from './pages/tabs-routable.vue';
+import TextEditor from './pages/text-editor.vue';
 import Toast from './pages/toast.vue';
 import Toggle from './pages/toggle.vue';
 import ToolbarTabbar from './pages/toolbar-tabbar.vue';
 import Tabbar from './pages/tabbar.vue';
-import TabbarLabels from './pages/tabbar-labels.vue';
+import TabbarIcons from './pages/tabbar-icons.vue';
 import TabbarScrollable from './pages/tabbar-scrollable.vue';
 import ToolbarHideScroll from './pages/toolbar-hide-scroll.vue';
 import Tooltip from './pages/tooltip.vue';
@@ -100,12 +101,17 @@ import Treeview from './pages/treeview.vue';
 import VirtualList from './pages/virtual-list.vue';
 import ColorThemes from './pages/color-themes.vue';
 
+import PageTransitions from './pages/page-transitions.vue';
+import PageTransitionsEffect from './pages/page-transitions-effect.vue';
+
 import RoutableModals from './pages/routable-modals.vue';
 import RoutablePopup from './pages/routable-popup.vue';
 import RoutableActions from './pages/routable-actions.vue';
 
 import MasterDetailMaster from './pages/master-detail-master.vue';
 import MasterDetailDetail from './pages/master-detail-detail.vue';
+
+import Store from './pages/store.vue';
 
 import NotFound from './pages/404.vue';
 
@@ -137,9 +143,10 @@ export default [
     content: `
       <div class="page">
         <div class="navbar">
+          <div class="navbar-bg"></div>
           <div class="navbar-inner sliding">
             <div class="left">
-              <a href="#" class="link back">
+              <a  class="link back">
                 <i class="icon icon-back"></i>
                 <span class="if-not-md">Back</span>
               </a>
@@ -161,9 +168,10 @@ export default [
     content: `
       <div class="page">
         <div class="navbar">
+          <div class="navbar-bg"></div>
           <div class="navbar-inner sliding">
             <div class="left">
-              <a href="#" class="link back">
+              <a  class="link back">
                 <i class="icon icon-back"></i>
                 <span class="if-not-md">Back</span>
               </a>
@@ -191,8 +199,8 @@ export default [
     component: ActionSheet,
   },
   {
-    path: '/appbar/',
-    component: Appbar,
+    path: '/area-chart/',
+    component: AreaChart,
   },
   {
     path: '/autocomplete/',
@@ -201,6 +209,10 @@ export default [
   {
     path: '/badge/',
     component: Badge,
+  },
+  {
+    path: '/breadcrumbs/',
+    component: Breadcrumbs,
   },
   {
     path: '/buttons/',
@@ -251,10 +263,6 @@ export default [
     component: Dialog,
   },
   {
-    path: '/elevation/',
-    component: Elevation,
-  },
-  {
     path: '/fab/',
     component: Fab,
   },
@@ -287,8 +295,8 @@ export default [
     component: Inputs,
   },
   {
-    path: '/lazy-load/',
-    component: LazyLoad,
+    path: '/list-button/',
+    component: ListButton,
   },
   {
     path: '/list/',
@@ -307,8 +315,8 @@ export default [
     component: LoginScreenPage,
   },
   {
-    path: '/menu/',
-    component: Menu,
+    path: '/menu-list/',
+    component: MenuList,
   },
   {
     path: '/messages/',
@@ -337,6 +345,10 @@ export default [
   {
     path: '/picker/',
     component: Picker,
+  },
+  {
+    path: '/pie-chart/',
+    component: PieChart,
   },
   {
     path: '/popup/',
@@ -375,6 +387,10 @@ export default [
     component: SearchbarExpandable,
   },
   {
+    path: '/segmented/',
+    component: Segmented,
+  },
+  {
     path: '/sheet-modal/',
     component: SheetModal,
   },
@@ -389,10 +405,6 @@ export default [
   {
     path: '/sortable/',
     component: Sortable,
-  },
-  {
-    path: '/statusbar/',
-    component: Statusbar,
   },
   {
     path: '/stepper/',
@@ -457,10 +469,6 @@ export default [
       {
         path: 'swiper-gallery/',
         component: SwiperGallery,
-      },
-      {
-        path: 'swiper-custom-controls/',
-        component: SwiperCustomControls,
       },
       {
         path: 'swiper-parallax/',
@@ -547,6 +555,10 @@ export default [
     ],
   },
   {
+    path: '/text-editor/',
+    component: TextEditor,
+  },
+  {
     path: '/toast/',
     component: Toast,
   },
@@ -563,8 +575,8 @@ export default [
         component: Tabbar,
       },
       {
-        path: 'tabbar-labels/',
-        component: TabbarLabels,
+        path: 'tabbar-icons/',
+        component: TabbarIcons,
       },
       {
         path: 'tabbar-scrollable/',
@@ -611,6 +623,16 @@ export default [
     component: ColorThemes,
   },
 
+  // Page Transitions
+  {
+    path: '/page-transitions/',
+    component: PageTransitions,
+  },
+  {
+    path: '/page-transitions/:effect/',
+    component: PageTransitionsEffect,
+  },
+
   // Routable Modals
   {
     path: '/routable-modals/',
@@ -639,7 +661,11 @@ export default [
         path: '/master-detail/:id/',
         component: MasterDetailDetail,
       },
-    ]
+    ],
+  },
+  {
+    path: '/store/',
+    component: Store,
   },
 
   // Default route (404 page). MUST BE THE LAST

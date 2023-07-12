@@ -1,17 +1,13 @@
 /**
-* F7 Build Configuration
-* Don't modify this file!
-* If you want to build custom version of F7, just put build-config-custom.js with the required configuration in this folder. Or build it using command line:
-* $ npm run build-core:prod -- --config path/to/config.js --output path/to/output/folder
-*/
+ * F7 Build Configuration
+ * Don't modify this file!
+ * If you want to build custom version of F7, just put build-config-custom.js with the required configuration in this folder. Or build it using command line:
+ * $ npm run build-core:prod -- --config path/to/config.js --output path/to/output/folder
+ */
 
 const config = {
-  target: 'universal',
   rtl: false,
   components: [
-    // Appbar
-    'appbar',
-
     // Modals
     'dialog',
     'popup',
@@ -68,7 +64,6 @@ const config = {
     // Page Components
     'infinite-scroll',
     'pull-to-refresh',
-    'lazy',
 
     // Data table
     'data-table',
@@ -104,48 +99,29 @@ const config = {
     // Skeleton
     'skeleton',
 
-    // Menu
-    'menu',
-
     // Color Picker
     'color-picker',
 
     // Tree View
     'treeview',
 
-    // VI Video Ads
-    'vi',
+    // WYSIWYG Editor
+    'text-editor',
 
-    // Elevation
-    'elevation',
+    // Pie Chart
+    'pie-chart',
+
+    // Area Chart
+    'area-chart',
+
+    'breadcrumbs',
 
     // Typography
     'typography',
   ],
   darkTheme: true,
-  themes: [
-    'ios',
-    'md',
-    'aurora',
-  ],
-  themeColor: '#007aff',
-  colors: {
-    red: '#ff3b30',
-    green: '#4cd964',
-    blue: '#2196f3',
-    pink: '#ff2d55',
-    yellow: '#ffcc00',
-    orange: '#ff9500',
-    purple: '#9c27b0',
-    deeppurple: '#673ab7',
-    lightblue: '#5ac8fa',
-    teal: '#009688',
-    lime: '#cddc39',
-    deeporange: '#ff6b22',
-    gray: '#8e8e93',
-    white: '#ffffff',
-    black: '#000000',
-  },
+  lightTheme: true,
+  themes: ['ios', 'md'],
 };
 
 module.exports = config;

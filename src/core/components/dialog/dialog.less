@@ -1,7 +1,8 @@
 /* === Dialog === */
-@import url('./dialog-vars.less');
+@import './dialog-vars.less';
 
-.dialog-backdrop {}
+.dialog-backdrop {
+}
 .dialog {
   position: absolute;
   z-index: 13500;
@@ -14,14 +15,15 @@
   transition-property: transform, opacity;
   display: none;
   transition-duration: 400ms;
-  box-shadow: var(--f7-dialog-box-shadow);
   width: var(--f7-dialog-width);
   margin-left: calc(-1 * var(--f7-dialog-width) / 2);
   border-radius: var(--f7-dialog-border-radius);
   text-align: var(--f7-dialog-text-align);
   color: var(--f7-dialog-text-color);
   font-size: var(--f7-dialog-font-size);
+  background: var(--f7-dialog-bg-color);
   will-change: transform, opacity;
+  .ios-translucent-modals(var(--f7-dialog-bg-color-rgb));
   &.modal-in {
     opacity: 1;
     transform: translate3d(0, -50%, 0) scale(1);
@@ -72,6 +74,17 @@
   text-transform: var(--f7-dialog-button-text-transform);
   display: block;
   cursor: pointer;
+  &.active-state {
+    background-color: var(--f7-dialog-button-pressed-bg-color);
+  }
+}
+.dialog-button-strong {
+  background-color: var(--f7-dialog-button-strong-bg-color);
+  color: var(--f7-dialog-button-strong-text-color);
+  font-weight: var(--f7-dialog-button-strong-font-weight);
+  &.active-state {
+    background-color: var(--f7-dialog-button-strong-pressed-bg-color);
+  }
 }
 .dialog-no-buttons {
   .dialog-buttons {
@@ -120,12 +133,10 @@ html.with-modal-dialog {
     .not-scrollable();
   }
 }
+
 .if-ios-theme({
-  @import url('./dialog-ios.less');
+  @import './dialog-ios.less';
 });
 .if-md-theme({
-  @import url('./dialog-md.less');
-});
-.if-aurora-theme({
-  @import url('./dialog-aurora.less');
+  @import './dialog-md.less';
 });

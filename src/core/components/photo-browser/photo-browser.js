@@ -1,11 +1,12 @@
-import PhotoBrowser from './photo-browser-class';
-import ConstructorMethods from '../../utils/constructor-methods';
+import PhotoBrowser from './photo-browser-class.js';
+import ConstructorMethods from '../../shared/constructor-methods.js';
 
 export default {
   name: 'photoBrowser',
   params: {
     photoBrowser: {
       photos: [],
+      thumbs: [],
       exposition: true,
       expositionHideCaptions: false,
       type: 'standalone',
@@ -14,13 +15,19 @@ export default {
       theme: 'light',
       captionsTheme: undefined,
       iconsColor: undefined,
+      popupPush: false,
       swipeToClose: true,
-      backLinkText: 'Close',
+      pageBackLinkText: 'Back',
+      popupCloseLinkText: undefined,
+      popupCloseLinkIcon: true,
       navbarOfText: 'of',
+      navbarShowCount: undefined,
       view: undefined,
       url: 'photos/',
-      routableModals: true,
+      routableModals: false,
       virtualSlides: true,
+      lazy: true,
+      closeByBackdropClick: true,
 
       renderNavbar: undefined,
       renderToolbar: undefined,
@@ -28,16 +35,20 @@ export default {
       renderObject: undefined,
       renderLazyPhoto: undefined,
       renderPhoto: undefined,
+      renderThumb: undefined,
       renderPage: undefined,
       renderPopup: undefined,
       renderStandalone: undefined,
 
       swiper: {
+        cssMode: false,
         initialSlide: 0,
         spaceBetween: 20,
         speed: 300,
         loop: false,
-        preloadImages: true,
+        keyboard: {
+          enabled: true,
+        },
         navigation: {
           nextEl: '.photo-browser-next',
           prevEl: '.photo-browser-prev',
@@ -47,16 +58,13 @@ export default {
           maxRatio: 3,
           minRatio: 1,
         },
-        lazy: {
-          enabled: true,
-        },
       },
     },
   },
   create() {
     const app = this;
     app.photoBrowser = ConstructorMethods({
-      defaultSelector: '.photo-browser',
+      defaultSelector: '.photo-browser-popup, .photo-browser-page',
       constructor: PhotoBrowser,
       app,
       domProp: 'f7PhotoBrowser',

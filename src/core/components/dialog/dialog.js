@@ -1,6 +1,6 @@
-import Utils from '../../utils/utils';
-import Dialog from './dialog-class';
-import ModalMethods from '../../utils/modal-methods';
+import { extend, iosPreloaderContent, mdPreloaderContent } from '../../shared/utils.js';
+import Dialog from './dialog-class.js';
+import ModalMethods from '../../shared/modal-methods.js';
 
 export default {
   name: 'dialog',
@@ -13,9 +13,11 @@ export default {
       passwordPlaceholder: 'Password',
       preloaderTitle: 'Loading... ',
       progressTitle: 'Loading... ',
+      backdrop: true,
       closeByBackdropClick: false,
       destroyPredefinedDialogs: true,
       keyboardActions: true,
+      autoFocus: true,
     },
   },
   static: {
@@ -28,7 +30,19 @@ export default {
     }
     const destroyOnClose = app.params.dialog.destroyPredefinedDialogs;
     const keyboardActions = app.params.dialog.keyboardActions;
-    app.dialog = Utils.extend(
+    const autoFocus = app.params.dialog.autoFocus;
+    const autoFocusHandler = autoFocus
+      ? {
+          on: {
+            opened(dialog) {
+              dialog.$el.find('input').eq(0).focus();
+            },
+          },
+        }
+      : {};
+    const isIosTheme = app.theme === 'ios';
+
+    app.dialog = extend(
       ModalMethods({
         app,
         constructor: Dialog,
@@ -44,12 +58,14 @@ export default {
           return new Dialog(app, {
             title: typeof title === 'undefined' ? defaultDialogTitle() : title,
             text,
-            buttons: [{
-              text: app.params.dialog.buttonOk,
-              bold: true,
-              onClick: callbackOk,
-              keyCodes: keyboardActions ? [13, 27] : null,
-            }],
+            buttons: [
+              {
+                text: app.params.dialog.buttonOk,
+                strong: isIosTheme,
+                onClick: callbackOk,
+                keyCodes: keyboardActions ? [13, 27] : null,
+              },
+            ],
             destroyOnClose,
           }).open();
         },
@@ -58,7 +74,8 @@ export default {
           if (typeof args[1] === 'function') {
             [text, callbackOk, callbackCancel, defaultValue, title] = args;
           }
-          defaultValue = typeof defaultValue === 'undefined' || defaultValue === null ? '' : defaultValue;
+          defaultValue =
+            typeof defaultValue === 'undefined' || defaultValue === null ? '' : defaultValue;
           return new Dialog(app, {
             title: typeof title === 'undefined' ? defaultDialogTitle() : title,
             text,
@@ -67,11 +84,11 @@ export default {
               {
                 text: app.params.dialog.buttonCancel,
                 keyCodes: keyboardActions ? [27] : null,
-                color: app.theme === 'aurora' ? 'gray' : null,
+                color: null,
               },
               {
                 text: app.params.dialog.buttonOk,
-                bold: true,
+                strong: isIosTheme,
                 keyCodes: keyboardActions ? [13] : null,
               },
             ],
@@ -81,6 +98,7 @@ export default {
               if (index === 1 && callbackOk) callbackOk(inputValue);
             },
             destroyOnClose,
+            ...autoFocusHandler,
           }).open();
         },
         confirm(...args) {
@@ -96,11 +114,11 @@ export default {
                 text: app.params.dialog.buttonCancel,
                 onClick: callbackCancel,
                 keyCodes: keyboardActions ? [27] : null,
-                color: app.theme === 'aurora' ? 'gray' : null,
+                color: null,
               },
               {
                 text: app.params.dialog.buttonOk,
-                bold: true,
+                strong: isIosTheme,
                 onClick: callbackOk,
                 keyCodes: keyboardActions ? [13] : null,
               },
@@ -116,6 +134,7 @@ export default {
           return new Dialog(app, {
             title: typeof title === 'undefined' ? defaultDialogTitle() : title,
             text,
+            // prettier-ignore
             content: `
               <div class="dialog-input-field dialog-input-double input">
                 <input type="text" name="dialog-username" placeholder="${app.params.dialog.usernamePlaceholder}" class="dialog-input">
@@ -127,11 +146,11 @@ export default {
               {
                 text: app.params.dialog.buttonCancel,
                 keyCodes: keyboardActions ? [27] : null,
-                color: app.theme === 'aurora' ? 'gray' : null,
+                color: null,
               },
               {
                 text: app.params.dialog.buttonOk,
-                bold: true,
+                strong: isIosTheme,
                 keyCodes: keyboardActions ? [13] : null,
               },
             ],
@@ -142,6 +161,7 @@ export default {
               if (index === 1 && callbackOk) callbackOk(username, password);
             },
             destroyOnClose,
+            ...autoFocusHandler,
           }).open();
         },
         password(...args) {
@@ -152,6 +172,7 @@ export default {
           return new Dialog(app, {
             title: typeof title === 'undefined' ? defaultDialogTitle() : title,
             text,
+            // prettier-ignore
             content: `
               <div class="dialog-input-field input">
                 <input type="password" name="dialog-password" placeholder="${app.params.dialog.passwordPlaceholder}" class="dialog-input">
@@ -160,11 +181,11 @@ export default {
               {
                 text: app.params.dialog.buttonCancel,
                 keyCodes: keyboardActions ? [27] : null,
-                color: app.theme === 'aurora' ? 'gray' : null,
+                color: null,
               },
               {
                 text: app.params.dialog.buttonOk,
-                bold: true,
+                strong: isIosTheme,
                 keyCodes: keyboardActions ? [13] : null,
               },
             ],
@@ -174,12 +195,21 @@ export default {
               if (index === 1 && callbackOk) callbackOk(password);
             },
             destroyOnClose,
+            ...autoFocusHandler,
           }).open();
         },
         preloader(title, color) {
-          const preloaderInner = Utils[`${app.theme}PreloaderContent`] || '';
+          const preloaders = {
+            iosPreloaderContent,
+            mdPreloaderContent,
+          };
+          const preloaderInner = preloaders[`${app.theme}PreloaderContent`] || '';
           return new Dialog(app, {
-            title: typeof title === 'undefined' || title === null ? app.params.dialog.preloaderTitle : title,
+            title:
+              typeof title === 'undefined' || title === null
+                ? app.params.dialog.preloaderTitle
+                : title,
+            // prettier-ignore
             content: `<div class="preloader${color ? ` color-${color}` : ''}">${preloaderInner}</div>`,
             cssClass: 'dialog-preloader',
             destroyOnClose,
@@ -202,6 +232,7 @@ export default {
           const dialog = new Dialog(app, {
             title: typeof title === 'undefined' ? app.params.dialog.progressTitle : title,
             cssClass: 'dialog-progress',
+            // prettier-ignore
             content: `
               <div class="progressbar${infinite ? '-infinite' : ''}${color ? ` color-${color}` : ''}">
                 ${!infinite ? '<span></span>' : ''}
@@ -212,7 +243,7 @@ export default {
           if (!infinite) dialog.setProgress(progress);
           return dialog.open();
         },
-      }
+      },
     );
   },
 };

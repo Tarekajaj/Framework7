@@ -1,10 +1,9 @@
 .md {
   .toolbar {
-    a.link {
+    .link {
       justify-content: center;
-      padding: 0 16px;
+      padding: 0 12px;
       min-width: 48px;
-      .link-highlight();
     }
     a.icon-only {
       min-width: 0;
@@ -12,40 +11,51 @@
     }
   }
   .tabbar,
-  .tabbar-labels {
-    a.tab-link,
-    a.link {
+  .tabbar-icons {
+    .tab-link,
+    .link {
       padding-left: 0;
       padding-right: 0;
     }
     a.icon-only {
       flex-shrink: initial;
     }
-    a.tab-link {
+    .tab-link {
       transition-duration: 300ms;
       overflow: hidden;
       position: relative;
     }
-    .tab-link-highlight {
-      position: absolute;
-      left: 0;
-      height: 2px;
-      background: var(--f7-tabbar-link-active-border-color, var(--f7-theme-color));
-      transition-duration: 300ms;
-      .ltr({
-        left: 0;
-      });
-      .rtl({
-        right: 0;
-      })
+    i.icon {
+      position: relative;
+      &::before {
+        content: '';
+        width: 64px;
+        height: 32px;
+        border-radius: 32px;
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translateX(-50%) translateY(-50%) scaleX(0.5);
+        background: var(--f7-tabbar-link-active-icon-bg-color);
+        opacity: 0;
+        transition-duration: 200ms;
+        z-index: -1;
+      }
+      + .tabbar-label {
+        margin-top: 8px;
+      }
+    }
+    .tab-link-active i.icon::before {
+      opacity: 1;
+      transform: translateX(-50%) translateY(-50%) scaleX(1);
     }
   }
 
-  .tabbar-labels {
-    a.tab-link,
-    a.link {
-      padding-top: 7px;
-      padding-bottom: 7px;
+  .tabbar-icons {
+    .tab-link,
+    .link {
+      padding-top: 8px;
+      padding-bottom: 8px;
     }
   }
   .tabbar-label {
@@ -59,9 +69,9 @@
     .toolbar-inner {
       overflow: auto;
     }
-    a.tab-link,
-    a.link {
-      padding: 0 16px;
+    .tab-link,
+    .link {
+      padding: 0 12px;
     }
   }
 }

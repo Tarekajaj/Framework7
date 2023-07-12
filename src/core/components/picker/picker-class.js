@@ -1,14 +1,21 @@
-import $ from 'dom7';
-import { window } from 'ssr-window';
-import Utils from '../../utils/utils';
-import Framework7Class from '../../utils/class';
-import pickerColumn from './picker-column';
+import { getWindow } from 'ssr-window';
+import $ from '../../shared/dom7.js';
+import { extend, nextTick, deleteProps } from '../../shared/utils.js';
+import Framework7Class from '../../shared/class.js';
+import { getDevice } from '../../shared/get-device.js';
+
+import pickerColumn from './picker-column.js';
+
+/** @jsx $jsx */
+import $jsx from '../../shared/$jsx.js';
 
 class Picker extends Framework7Class {
   constructor(app, params = {}) {
     super(params, [app]);
     const picker = this;
-    picker.params = Utils.extend({}, app.params.picker, params);
+    const device = getDevice();
+    const window = getWindow();
+    picker.params = extend({}, app.params.picker, params);
 
     let $containerEl;
     if (picker.params.containerEl) {
@@ -21,25 +28,31 @@ class Picker extends Framework7Class {
       $inputEl = $(picker.params.inputEl);
     }
 
-    let view;
-    if ($inputEl) {
-      view = $inputEl.parents('.view').length && $inputEl.parents('.view')[0].f7View;
+    let $scrollToEl = picker.params.scrollToInput ? $inputEl : undefined;
+    if (picker.params.scrollToEl) {
+      const scrollToEl = $(picker.params.scrollToEl);
+      if (scrollToEl.length > 0) {
+        $scrollToEl = scrollToEl;
+      }
     }
-    if (!view) view = app.views.main;
 
-    Utils.extend(picker, {
+    extend(picker, {
       app,
       $containerEl,
       containerEl: $containerEl && $containerEl[0],
       inline: $containerEl && $containerEl.length > 0,
-      needsOriginFix: app.device.ios || ((window.navigator.userAgent.toLowerCase().indexOf('safari') >= 0 && window.navigator.userAgent.toLowerCase().indexOf('chrome') < 0) && !app.device.android),
+      needsOriginFix:
+        device.ios ||
+        (window.navigator.userAgent.toLowerCase().indexOf('safari') >= 0 &&
+          window.navigator.userAgent.toLowerCase().indexOf('chrome') < 0 &&
+          !device.android),
       cols: [],
       $inputEl,
       inputEl: $inputEl && $inputEl[0],
+      $scrollToEl,
       initialized: false,
       opened: false,
       url: picker.params.url,
-      view,
     });
 
     function onResize() {
@@ -51,13 +64,22 @@ class Picker extends Framework7Class {
     function onInputFocus(e) {
       e.preventDefault();
     }
+    let htmlTouchStartTarget = null;
+    function onHtmlTouchStart(e) {
+      htmlTouchStartTarget = e.target;
+    }
     function onHtmlClick(e) {
+      if (picker.destroyed || !picker.params) return;
       const $targetEl = $(e.target);
       if (picker.isPopover()) return;
       if (!picker.opened || picker.closing) return;
       if ($targetEl.closest('[class*="backdrop"]').length) return;
       if ($inputEl && $inputEl.length > 0) {
-        if ($targetEl[0] !== $inputEl[0] && $targetEl.closest('.sheet-modal').length === 0) {
+        if (
+          htmlTouchStartTarget === e.target &&
+          $targetEl[0] !== $inputEl[0] &&
+          $targetEl.closest('.sheet-modal').length === 0
+        ) {
           picker.close();
         }
       } else if ($(e.target).closest('.sheet-modal').length === 0) {
@@ -66,7 +88,7 @@ class Picker extends Framework7Class {
     }
 
     // Events
-    Utils.extend(picker, {
+    extend(picker, {
       attachResizeEvent() {
         app.on('resize', onResize);
       },
@@ -77,25 +99,45 @@ class Picker extends Framework7Class {
         picker.$inputEl.on('click', onInputClick);
         if (picker.params.inputReadOnly) {
           picker.$inputEl.on('focus mousedown', onInputFocus);
+          if (picker.$inputEl[0]) {
+            picker.$inputEl[0].f7ValidateReadonly = true;
+          }
         }
       },
       detachInputEvents() {
         picker.$inputEl.off('click', onInputClick);
         if (picker.params.inputReadOnly) {
           picker.$inputEl.off('focus mousedown', onInputFocus);
+          if (picker.$inputEl[0]) {
+            delete picker.$inputEl[0].f7ValidateReadonly;
+          }
         }
       },
       attachHtmlEvents() {
         app.on('click', onHtmlClick);
+        app.on('touchstart', onHtmlTouchStart);
       },
       detachHtmlEvents() {
         app.off('click', onHtmlClick);
+        app.off('touchstart', onHtmlTouchStart);
       },
     });
 
     picker.init();
 
     return picker;
+  }
+
+  get view() {
+    const { app, params, $inputEl } = this;
+    let view;
+    if (params.view) {
+      view = params.view;
+    } else if ($inputEl) {
+      view = $inputEl.parents('.view').length && $inputEl.parents('.view')[0].f7View;
+    }
+    if (!view) view = app.views.main;
+    return view;
   }
 
   initInput() {
@@ -110,7 +152,7 @@ class Picker extends Framework7Class {
     for (let i = 0; i < picker.cols.length; i += 1) {
       if (!picker.cols[i].divider) {
         picker.cols[i].calcSize();
-        picker.cols[i].setValue(picker.cols[i].value, 0, false);
+        picker.cols[i].setValue(picker.cols[i].value, false);
       }
     }
   }
@@ -118,18 +160,16 @@ class Picker extends Framework7Class {
   isPopover() {
     const picker = this;
     const { app, modal, params } = picker;
+    const device = getDevice();
     if (params.openIn === 'sheet') return false;
     if (modal && modal.type !== 'popover') return false;
 
     if (!picker.inline && picker.inputEl) {
       if (params.openIn === 'popover') return true;
-      if (app.device.ios) {
-        return !!app.device.ipad;
+      if (device.ios) {
+        return !!device.ipad;
       }
       if (app.width >= 768) {
-        return true;
-      }
-      if (app.device.desktop && app.theme === 'aurora') {
         return true;
       }
     }
@@ -145,7 +185,7 @@ class Picker extends Framework7Class {
     return value.join(' ');
   }
 
-  setValue(values, transition) {
+  setValue(values) {
     const picker = this;
     let valueIndex = 0;
     if (picker.cols.length === 0) {
@@ -155,7 +195,7 @@ class Picker extends Framework7Class {
     }
     for (let i = 0; i < picker.cols.length; i += 1) {
       if (picker.cols[i] && !picker.cols[i].divider) {
-        picker.cols[i].setValue(values[valueIndex], transition);
+        picker.cols[i].setValue(values[valueIndex]);
         valueIndex += 1;
       }
     }
@@ -172,10 +212,14 @@ class Picker extends Framework7Class {
     const newDisplayValue = [];
     let column;
     if (picker.cols.length === 0) {
-      const noDividerColumns = picker.params.cols.filter(c => !c.divider);
+      const noDividerColumns = picker.params.cols.filter((c) => !c.divider);
       for (let i = 0; i < noDividerColumns.length; i += 1) {
         column = noDividerColumns[i];
-        if (column.displayValues !== undefined && column.values !== undefined && column.values.indexOf(newValue[i]) !== -1) {
+        if (
+          column.displayValues !== undefined &&
+          column.values !== undefined &&
+          column.values.indexOf(newValue[i]) !== -1
+        ) {
           newDisplayValue.push(column.displayValues[column.values.indexOf(newValue[i])]);
         } else {
           newDisplayValue.push(newValue[i]);
@@ -219,33 +263,38 @@ class Picker extends Framework7Class {
   renderToolbar() {
     const picker = this;
     if (picker.params.renderToolbar) return picker.params.renderToolbar.call(picker, picker);
-    return `
-      <div class="toolbar toolbar-top no-shadow">
+    return (
+      <div class="toolbar toolbar-top">
         <div class="toolbar-inner">
           <div class="left"></div>
           <div class="right">
-            <a class="link sheet-close popover-close">${picker.params.toolbarCloseText}</a>
+            <a class="link sheet-close popover-close">{picker.params.toolbarCloseText}</a>
           </div>
         </div>
       </div>
-    `.trim();
+    );
   }
   // eslint-disable-next-line
   renderColumn(col, onlyItems) {
-    const colClasses = `picker-column ${col.textAlign ? `picker-column-${col.textAlign}` : ''} ${col.cssClass || ''}`;
+    const colClasses = `picker-column ${col.textAlign ? `picker-column-${col.textAlign}` : ''} ${
+      col.cssClass || ''
+    }`;
     let columnHtml;
     let columnItemsHtml;
 
     if (col.divider) {
+      // prettier-ignore
       columnHtml = `
         <div class="${colClasses} picker-column-divider">${col.content}</div>
       `;
     } else {
+      // prettier-ignore
       columnItemsHtml = col.values.map((value, index) => `
         <div class="picker-item" data-picker-value="${value}">
           <span>${col.displayValues ? col.displayValues[index] : value}</span>
         </div>
       `).join('');
+      // prettier-ignore
       columnHtml = `
         <div class="${colClasses}">
           <div class="picker-items">${columnItemsHtml}</div>
@@ -259,15 +308,15 @@ class Picker extends Framework7Class {
   renderInline() {
     const picker = this;
     const { rotateEffect, cssClass, toolbar } = picker.params;
-    const inlineHtml = `
-      <div class="picker picker-inline ${rotateEffect ? 'picker-3d' : ''} ${cssClass || ''}">
-        ${toolbar ? picker.renderToolbar() : ''}
+    const inlineHtml = (
+      <div class={`picker picker-inline ${rotateEffect ? 'picker-3d' : ''} ${cssClass || ''}`}>
+        {toolbar && picker.renderToolbar()}
         <div class="picker-columns">
-          ${picker.cols.map(col => picker.renderColumn(col)).join('')}
+          {picker.cols.map((col) => picker.renderColumn(col))}
           <div class="picker-center-highlight"></div>
         </div>
       </div>
-    `.trim();
+    );
 
     return inlineHtml;
   }
@@ -275,15 +324,19 @@ class Picker extends Framework7Class {
   renderSheet() {
     const picker = this;
     const { rotateEffect, cssClass, toolbar } = picker.params;
-    const sheetHtml = `
-      <div class="sheet-modal picker picker-sheet ${rotateEffect ? 'picker-3d' : ''} ${cssClass || ''}">
-        ${toolbar ? picker.renderToolbar() : ''}
+    const sheetHtml = (
+      <div
+        class={`sheet-modal picker picker-sheet ${rotateEffect ? 'picker-3d' : ''} ${
+          cssClass || ''
+        }`}
+      >
+        {toolbar && picker.renderToolbar()}
         <div class="sheet-modal-inner picker-columns">
-          ${picker.cols.map(col => picker.renderColumn(col)).join('')}
+          {picker.cols.map((col) => picker.renderColumn(col))}
           <div class="picker-center-highlight"></div>
         </div>
       </div>
-    `.trim();
+    );
 
     return sheetHtml;
   }
@@ -291,19 +344,19 @@ class Picker extends Framework7Class {
   renderPopover() {
     const picker = this;
     const { rotateEffect, cssClass, toolbar } = picker.params;
-    const popoverHtml = `
+    const popoverHtml = (
       <div class="popover picker-popover">
         <div class="popover-inner">
-          <div class="picker ${rotateEffect ? 'picker-3d' : ''} ${cssClass || ''}">
-            ${toolbar ? picker.renderToolbar() : ''}
+          <div class={`picker ${rotateEffect ? 'picker-3d' : ''} ${cssClass || ''}`}>
+            {toolbar && picker.renderToolbar()}
             <div class="picker-columns">
-              ${picker.cols.map(col => picker.renderColumn(col)).join('')}
+              {picker.cols.map((col) => picker.renderColumn(col))}
               <div class="picker-center-highlight"></div>
             </div>
           </div>
         </div>
       </div>
-    `.trim();
+    );
 
     return popoverHtml;
   }
@@ -329,12 +382,9 @@ class Picker extends Framework7Class {
     picker.attachResizeEvent();
 
     // Init cols
-    $el.find('.picker-column').each((index, colEl) => {
+    $el.find('.picker-column').each((colEl) => {
       let updateItems = true;
-      if (
-        (!initialized && params.value)
-        || (initialized && value)
-      ) {
+      if ((!initialized && params.value) || (initialized && value)) {
         updateItems = false;
       }
       picker.initColumn(colEl, updateItems);
@@ -342,12 +392,12 @@ class Picker extends Framework7Class {
 
     // Set value
     if (!initialized) {
-      if (value) picker.setValue(value, 0);
+      if (value) picker.setValue(value);
       else if (params.value) {
-        picker.setValue(params.value, 0);
+        picker.setValue(params.value);
       }
     } else if (value) {
-      picker.setValue(value, 0);
+      picker.setValue(value);
     }
 
     // Extra focus
@@ -359,10 +409,10 @@ class Picker extends Framework7Class {
 
     // Trigger events
     if ($el) {
-      $el.trigger('picker:open', picker);
+      $el.trigger('picker:open');
     }
     if ($inputEl) {
-      $inputEl.trigger('picker:open', picker);
+      $inputEl.trigger('picker:open');
     }
     picker.emit('local::open pickerOpen', picker);
   }
@@ -372,10 +422,10 @@ class Picker extends Framework7Class {
     picker.opening = false;
 
     if (picker.$el) {
-      picker.$el.trigger('picker:opened', picker);
+      picker.$el.trigger('picker:opened');
     }
     if (picker.$inputEl) {
-      picker.$inputEl.trigger('picker:opened', picker);
+      picker.$inputEl.trigger('picker:opened');
     }
     picker.emit('local::opened pickerOpened', picker);
   }
@@ -392,15 +442,24 @@ class Picker extends Framework7Class {
     picker.cols.forEach((col) => {
       if (col.destroy) col.destroy();
     });
-    if (picker.$inputEl && app.theme === 'md') {
-      picker.$inputEl.trigger('blur');
+
+    if (picker.$inputEl) {
+      if (app.theme === 'md') {
+        picker.$inputEl.trigger('blur');
+      } else {
+        const validate = picker.$inputEl.attr('validate');
+        const required = picker.$inputEl.attr('required');
+        if (validate && required) {
+          app.input.validate(picker.$inputEl);
+        }
+      }
     }
 
     if (picker.$el) {
-      picker.$el.trigger('picker:close', picker);
+      picker.$el.trigger('picker:close');
     }
     if (picker.$inputEl) {
-      picker.$inputEl.trigger('picker:close', picker);
+      picker.$inputEl.trigger('picker:close');
     }
     picker.emit('local::close pickerClose', picker);
   }
@@ -411,7 +470,7 @@ class Picker extends Framework7Class {
     picker.closing = false;
 
     if (!picker.inline) {
-      Utils.nextTick(() => {
+      nextTick(() => {
         if (picker.modal && picker.modal.el && picker.modal.destroy) {
           if (!picker.params.routableModals) {
             picker.modal.destroy();
@@ -422,20 +481,20 @@ class Picker extends Framework7Class {
     }
 
     if (picker.$el) {
-      picker.$el.trigger('picker:closed', picker);
+      picker.$el.trigger('picker:closed');
     }
     if (picker.$inputEl) {
-      picker.$inputEl.trigger('picker:closed', picker);
+      picker.$inputEl.trigger('picker:closed');
     }
     picker.emit('local::closed pickerClosed', picker);
   }
 
   open() {
     const picker = this;
-    const { app, opened, inline, $inputEl } = picker;
+    const { app, opened, inline, $inputEl, $scrollToEl, params } = picker;
     if (opened) return;
-    if (picker.cols.length === 0 && picker.params.cols.length) {
-      picker.params.cols.forEach((col) => {
+    if (picker.cols.length === 0 && params.cols.length) {
+      params.cols.forEach((col) => {
         picker.cols.push(col);
       });
     }
@@ -451,9 +510,9 @@ class Picker extends Framework7Class {
     const modalType = isPopover ? 'popover' : 'sheet';
     const modalParams = {
       targetEl: $inputEl,
-      scrollToEl: picker.params.scrollToInput ? $inputEl : undefined,
+      scrollToEl: $scrollToEl,
       content: picker.render(),
-      backdrop: isPopover,
+      backdrop: typeof params.backdrop !== 'undefined' ? params.backdrop : isPopover,
       on: {
         open() {
           const modal = this;
@@ -462,12 +521,22 @@ class Picker extends Framework7Class {
           picker.$el[0].f7Picker = picker;
           picker.onOpen();
         },
-        opened() { picker.onOpened(); },
-        close() { picker.onClose(); },
-        closed() { picker.onClosed(); },
+        opened() {
+          picker.onOpened();
+        },
+        close() {
+          picker.onClose();
+        },
+        closed() {
+          picker.onClosed();
+        },
       },
     };
-    if (picker.params.routableModals) {
+    if (modalType === 'sheet') {
+      modalParams.push = params.sheetPush;
+      modalParams.swipeToClose = params.sheetSwipeToClose;
+    }
+    if (params.routableModals && picker.view) {
       picker.view.router.navigate({
         url: picker.url,
         route: {
@@ -490,7 +559,7 @@ class Picker extends Framework7Class {
       picker.onClosed();
       return;
     }
-    if (picker.params.routableModals) {
+    if (picker.params.routableModals && picker.view) {
       picker.view.router.back();
     } else {
       picker.modal.close();
@@ -527,7 +596,7 @@ class Picker extends Framework7Class {
     if (picker.destroyed) return;
     const { $el } = picker;
     picker.emit('local::beforeDestroy pickerBeforeDestroy', picker);
-    if ($el) $el.trigger('picker:beforedestroy', picker);
+    if ($el) $el.trigger('picker:beforedestroy');
 
     picker.close();
 
@@ -540,7 +609,7 @@ class Picker extends Framework7Class {
     }
 
     if ($el && $el.length) delete picker.$el[0].f7Picker;
-    Utils.deleteProps(picker);
+    deleteProps(picker);
     picker.destroyed = true;
   }
 }

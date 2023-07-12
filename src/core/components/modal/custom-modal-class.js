@@ -1,14 +1,17 @@
-import $ from 'dom7';
-import Utils from '../../utils/utils';
-import Modal from './modal-class';
+import $ from '../../shared/dom7.js';
+import { extend } from '../../shared/utils.js';
+import Modal from './modal-class.js';
 
 class CustomModal extends Modal {
   constructor(app, params) {
-    const extendedParams = Utils.extend({
-      backdrop: true,
-      closeByBackdropClick: true,
-      on: {},
-    }, params);
+    const extendedParams = extend(
+      {
+        backdrop: true,
+        closeByBackdropClick: true,
+        on: {},
+      },
+      params,
+    );
 
     // Extends with open/close Modal methods;
     super(app, extendedParams);
@@ -34,10 +37,10 @@ class CustomModal extends Modal {
     }
     let $backdropEl;
     if (customModal.params.backdrop) {
-      $backdropEl = app.root.children('.custom-modal-backdrop');
+      $backdropEl = app.$el.children('.custom-modal-backdrop');
       if ($backdropEl.length === 0) {
         $backdropEl = $('<div class="custom-modal-backdrop"></div>');
-        app.root.append($backdropEl);
+        app.$el.append($backdropEl);
       }
     }
 
@@ -59,7 +62,7 @@ class CustomModal extends Modal {
       }
     });
 
-    Utils.extend(customModal, {
+    extend(customModal, {
       app,
       $el,
       el: $el[0],

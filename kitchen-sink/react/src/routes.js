@@ -4,9 +4,10 @@ import PanelRight from './pages/panel-right.jsx';
 import About from './pages/about.jsx';
 import Accordion from './pages/accordion.jsx';
 import ActionSheet from './pages/action-sheet.jsx';
-import Appbar from './pages/appbar.jsx';
+import AreaChart from './pages/area-chart.jsx';
 import Autocomplete from './pages/autocomplete.jsx';
 import Badge from './pages/badge.jsx';
+import Breadcrumbs from './pages/breadcrumbs.jsx';
 import Buttons from './pages/buttons.jsx';
 import Calendar from './pages/calendar.jsx';
 import CalendarPage from './pages/calendar-page.jsx';
@@ -19,7 +20,6 @@ import ContactsList from './pages/contacts-list.jsx';
 import ContentBlock from './pages/content-block.jsx';
 import DataTable from './pages/data-table.jsx';
 import Dialog from './pages/dialog.jsx';
-import Elevation from './pages/elevation.jsx';
 import Fab from './pages/fab.jsx';
 import FabMorph from './pages/fab-morph.jsx';
 import FormStorage from './pages/form-storage.jsx';
@@ -28,12 +28,12 @@ import Grid from './pages/grid.jsx';
 import Icons from './pages/icons.jsx';
 import InfiniteScroll from './pages/infinite-scroll.jsx';
 import Inputs from './pages/inputs.jsx';
-import LazyLoad from './pages/lazy-load.jsx';
 import List from './pages/list.jsx';
+import ListButton from './pages/list-button.jsx';
 import ListIndex from './pages/list-index.jsx';
 import LoginScreen from './pages/login-screen.jsx';
 import LoginScreenPage from './pages/login-screen-page.jsx';
-import Menu from './pages/menu.jsx';
+import MenuList from './pages/menu-list.jsx';
 import Messages from './pages/messages.jsx';
 import Navbar from './pages/navbar.jsx';
 import NavbarHideScroll from './pages/navbar-hide-scroll.jsx';
@@ -41,6 +41,7 @@ import Notifications from './pages/notifications.jsx';
 import Panel from './pages/panel.jsx';
 import PhotoBrowser from './pages/photo-browser.jsx';
 import Picker from './pages/picker.jsx';
+import PieChart from './pages/pie-chart.jsx';
 import Popup from './pages/popup.jsx';
 import Popover from './pages/popover.jsx';
 import Preloader from './pages/preloader.jsx';
@@ -50,11 +51,11 @@ import Radio from './pages/radio.jsx';
 import Range from './pages/range.jsx';
 import Searchbar from './pages/searchbar.jsx';
 import SearchbarExpandable from './pages/searchbar-expandable.jsx';
+import Segmented from './pages/segmented.jsx';
 import SheetModal from './pages/sheet-modal.jsx';
 import Skeleton from './pages/skeleton.jsx';
 import SmartSelect from './pages/smart-select.jsx';
 import Sortable from './pages/sortable.jsx';
-import Statusbar from './pages/statusbar.jsx';
 import Stepper from './pages/stepper.jsx';
 import Subnavbar from './pages/subnavbar.jsx';
 import SubnavbarTitle from './pages/subnavbar-title.jsx';
@@ -71,7 +72,6 @@ import Swiper3dFlip from './pages/swiper-3d-flip.jsx';
 import SwiperFade from './pages/swiper-fade.jsx';
 import SwiperScrollbar from './pages/swiper-scrollbar.jsx';
 import SwiperGallery from './pages/swiper-gallery.jsx';
-import SwiperCustomControls from './pages/swiper-custom-controls.jsx';
 import SwiperParallax from './pages/swiper-parallax.jsx';
 import SwiperLazy from './pages/swiper-lazy.jsx';
 import SwiperPaginationProgress from './pages/swiper-pagination-progress.jsx';
@@ -83,11 +83,12 @@ import TabsStatic from './pages/tabs-static.jsx';
 import TabsAnimated from './pages/tabs-animated.jsx';
 import TabsSwipeable from './pages/tabs-swipeable.jsx';
 import TabsRoutable from './pages/tabs-routable.jsx';
+import TextEditor from './pages/text-editor.jsx';
 import Toast from './pages/toast.jsx';
 import Toggle from './pages/toggle.jsx';
 import ToolbarTabbar from './pages/toolbar-tabbar.jsx';
 import Tabbar from './pages/tabbar.jsx';
-import TabbarLabels from './pages/tabbar-labels.jsx';
+import TabbarIcons from './pages/tabbar-icons.jsx';
 import TabbarScrollable from './pages/tabbar-scrollable.jsx';
 import ToolbarHideScroll from './pages/toolbar-hide-scroll.jsx';
 import Tooltip from './pages/tooltip.jsx';
@@ -99,6 +100,9 @@ import Treeview from './pages/treeview.jsx';
 import VirtualList from './pages/virtual-list.jsx';
 import ColorThemes from './pages/color-themes.jsx';
 
+import PageTransitions from './pages/page-transitions.jsx';
+import PageTransitionsEffect from './pages/page-transitions-effect.jsx';
+
 import RoutableModals from './pages/routable-modals.jsx';
 import RoutablePopup from './pages/routable-popup.jsx';
 import RoutableActions from './pages/routable-actions.jsx';
@@ -106,6 +110,7 @@ import RoutableActions from './pages/routable-actions.jsx';
 import MasterDetailMaster from './pages/master-detail-master.jsx';
 import MasterDetailDetail from './pages/master-detail-detail.jsx';
 
+import Store from './pages/store.jsx';
 
 import NotFound from './pages/404.jsx';
 
@@ -137,9 +142,10 @@ export default [
     content: `
       <div class="page">
         <div class="navbar">
+          <div class="navbar-bg"></div>
           <div class="navbar-inner sliding">
             <div class="left">
-              <a href="#" class="link back">
+              <a  class="link back">
                 <i class="icon icon-back"></i>
                 <span class="if-not-md">Back</span>
               </a>
@@ -161,9 +167,10 @@ export default [
     content: `
       <div class="page">
         <div class="navbar">
+          <div class="navbar-bg"></div>
           <div class="navbar-inner sliding">
             <div class="left">
-              <a href="#" class="link back">
+              <a  class="link back">
                 <i class="icon icon-back"></i>
                 <span class="if-not-md">Back</span>
               </a>
@@ -190,8 +197,8 @@ export default [
     component: ActionSheet,
   },
   {
-    path: '/appbar/',
-    component: Appbar,
+    path: '/area-chart/',
+    component: AreaChart,
   },
   {
     path: '/autocomplete/',
@@ -200,6 +207,10 @@ export default [
   {
     path: '/badge/',
     component: Badge,
+  },
+  {
+    path: '/breadcrumbs/',
+    component: Breadcrumbs,
   },
   {
     path: '/buttons/',
@@ -250,10 +261,6 @@ export default [
     component: Dialog,
   },
   {
-    path: '/elevation/',
-    component: Elevation,
-  },
-  {
     path: '/fab/',
     component: Fab,
   },
@@ -286,12 +293,12 @@ export default [
     component: Inputs,
   },
   {
-    path: '/lazy-load/',
-    component: LazyLoad,
-  },
-  {
     path: '/list/',
     component: List,
+  },
+  {
+    path: '/list-button/',
+    component: ListButton,
   },
   {
     path: '/list-index/',
@@ -306,8 +313,8 @@ export default [
     component: LoginScreenPage,
   },
   {
-    path: '/menu/',
-    component: Menu,
+    path: '/menu-list/',
+    component: MenuList,
   },
   {
     path: '/messages/',
@@ -336,6 +343,10 @@ export default [
   {
     path: '/picker/',
     component: Picker,
+  },
+  {
+    path: '/pie-chart/',
+    component: PieChart,
   },
   {
     path: '/popup/',
@@ -374,6 +385,10 @@ export default [
     component: SearchbarExpandable,
   },
   {
+    path: '/segmented/',
+    component: Segmented,
+  },
+  {
     path: '/sheet-modal/',
     component: SheetModal,
   },
@@ -388,10 +403,6 @@ export default [
   {
     path: '/sortable/',
     component: Sortable,
-  },
-  {
-    path: '/statusbar/',
-    component: Statusbar,
   },
   {
     path: '/stepper/',
@@ -456,10 +467,6 @@ export default [
       {
         path: 'swiper-gallery/',
         component: SwiperGallery,
-      },
-      {
-        path: 'swiper-custom-controls/',
-        component: SwiperCustomControls,
       },
       {
         path: 'swiper-parallax/',
@@ -546,6 +553,10 @@ export default [
     ],
   },
   {
+    path: '/text-editor/',
+    component: TextEditor,
+  },
+  {
     path: '/toast/',
     component: Toast,
   },
@@ -562,8 +573,8 @@ export default [
         component: Tabbar,
       },
       {
-        path: 'tabbar-labels/',
-        component: TabbarLabels,
+        path: 'tabbar-icons/',
+        component: TabbarIcons,
       },
       {
         path: 'tabbar-scrollable/',
@@ -610,6 +621,16 @@ export default [
     component: ColorThemes,
   },
 
+  // Page Transitions
+  {
+    path: '/page-transitions/',
+    component: PageTransitions,
+  },
+  {
+    path: '/page-transitions/:effect/',
+    component: PageTransitionsEffect,
+  },
+
   // Routable Modals
   {
     path: '/routable-modals/',
@@ -637,6 +658,11 @@ export default [
   {
     path: '/master-detail/:id/',
     component: MasterDetailDetail,
+  },
+
+  {
+    path: '/store/',
+    component: Store,
   },
   // Default route (404 page). MUST BE THE LAST
   {

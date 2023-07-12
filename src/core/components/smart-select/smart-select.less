@@ -1,6 +1,6 @@
 /* === Smart Select === */
 .smart-select {
-  @import url('./smart-select-vars.less');
+  @import './smart-select-vars.less';
   select {
     display: none;
   }
@@ -11,7 +11,6 @@
     position: relative;
     display: block;
   }
-
 }
 .smart-select-sheet .page,
 .smart-select-sheet .sheet-modal-inner,
@@ -28,8 +27,7 @@
   .list {
     margin: 0;
     ul {
-      .hairline-remove(top);
-      .hairline-remove(bottom);
+      .hairline-remove-top-bottom();
     }
   }
 }
@@ -37,11 +35,8 @@
   max-height: 40vh;
 }
 .if-ios-theme({
-  @import url('./smart-select-ios.less');
+  @import './smart-select-ios.less';
 });
 .if-md-theme({
-  @import url('./smart-select-md.less');
-});
-.if-aurora-theme({
-  @import url('./smart-select-aurora.less');
+  @import './smart-select-md.less';
 });

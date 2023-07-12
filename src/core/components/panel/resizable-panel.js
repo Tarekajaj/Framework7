@@ -1,10 +1,12 @@
-import $ from 'dom7';
-import Utils from '../../utils/utils';
-import Support from '../../utils/support';
+import $ from '../../shared/dom7.js';
+import { extend, nextFrame } from '../../shared/utils.js';
+import { getSupport } from '../../shared/get-support.js';
 
 function resizablePanel(panel) {
   const app = panel.app;
-  Utils.extend(panel, {
+  const support = getSupport();
+  if (panel.resizableInitialized) return;
+  extend(panel, {
     resizable: true,
     resizableWidth: null,
     resizableInitialized: true,
@@ -25,10 +27,12 @@ function resizablePanel(panel) {
   let panelMaxWidth;
   let visibleByBreakpoint;
 
+  const isPushingPanel = effect !== 'cover' && effect !== 'floating';
+
   function transformCSSWidth(v) {
     if (!v) return null;
     if (v.indexOf('%') >= 0 || v.indexOf('vw') >= 0) {
-      return parseInt(v, 10) / 100 * app.width;
+      return (parseInt(v, 10) / 100) * app.width;
     }
     const newV = parseInt(v, 10);
     if (Number.isNaN(newV)) return null;
@@ -47,7 +51,7 @@ function resizablePanel(panel) {
     isTouched = true;
     panelMinWidth = transformCSSWidth($el.css('min-width'));
     panelMaxWidth = transformCSSWidth($el.css('max-width'));
-    visibleByBreakpoint = $el.hasClass('panel-visible-by-breakpoint');
+    visibleByBreakpoint = $el.hasClass('panel-in-breakpoint');
   }
   function handleTouchMove(e) {
     if (!isTouched) return;
@@ -58,10 +62,13 @@ function resizablePanel(panel) {
       $el.transition(0);
       $el.addClass('panel-resizing');
       $htmlEl.css('cursor', 'col-resize');
-      if (effect === 'reveal' || visibleByBreakpoint) {
+      if (isPushingPanel || visibleByBreakpoint) {
         $viewEl = $(panel.getViewEl());
+        if (panel.$containerEl && panel.$containerEl.hasClass('page')) {
+          $viewEl.add(panel.$containerEl.children('.page-content, .tabs, .fab'));
+        }
       }
-      if (effect === 'reveal' && !visibleByBreakpoint) {
+      if (isPushingPanel && !visibleByBreakpoint) {
         $backdropEl.transition(0);
         $viewEl.transition(0);
       }
@@ -71,7 +78,7 @@ function resizablePanel(panel) {
 
     e.preventDefault();
 
-    touchesDiff = (pageX - touchesStart.x);
+    touchesDiff = pageX - touchesStart.x;
 
     let newPanelWidth = side === 'left' ? panelWidth + touchesDiff : panelWidth - touchesDiff;
     if (panelMinWidth && !Number.isNaN(panelMinWidth)) {
@@ -84,18 +91,22 @@ function resizablePanel(panel) {
 
     panel.resizableWidth = newPanelWidth;
     $el[0].style.width = `${newPanelWidth}px`;
-    if (effect === 'reveal' && !visibleByBreakpoint) {
+    if (isPushingPanel && !visibleByBreakpoint) {
       if ($viewEl) {
-        $viewEl.transform(`translate3d(${side === 'left' ? newPanelWidth : -newPanelWidth}px, 0, 0)`);
+        $viewEl.transform(
+          `translate3d(${side === 'left' ? newPanelWidth : -newPanelWidth}px, 0, 0)`,
+        );
       }
       if ($backdropEl) {
-        $backdropEl.transform(`translate3d(${side === 'left' ? newPanelWidth : -newPanelWidth}px, 0, 0)`);
+        $backdropEl.transform(
+          `translate3d(${side === 'left' ? newPanelWidth : -newPanelWidth}px, 0, 0)`,
+        );
       }
     } else if (visibleByBreakpoint && $viewEl) {
       $viewEl.css(`margin-${side}`, `${newPanelWidth}px`);
     }
 
-    $el.trigger('panel:resize', panel, newPanelWidth);
+    $el.trigger('panel:resize', newPanelWidth);
     panel.emit('local::resize panelResize', panel, newPanelWidth);
   }
   function handleTouchEnd() {
@@ -110,15 +121,14 @@ function resizablePanel(panel) {
 
     $htmlEl[0].style.setProperty(`--f7-panel-${side}-width`, `${panel.resizableWidth}px`);
     $el[0].style.width = '';
-    if (effect === 'reveal' && !visibleByBreakpoint) {
+    if (isPushingPanel && !visibleByBreakpoint) {
       $viewEl.transform('');
       $backdropEl.transform('');
     }
     $el.removeClass('panel-resizing');
-    Utils.nextFrame(() => {
-      if (visibleByBreakpoint) return;
+    nextFrame(() => {
       $el.transition('');
-      if (effect === 'reveal') {
+      if (isPushingPanel) {
         $backdropEl.transition('');
         if ($viewEl) $viewEl.transition('');
       }
@@ -149,7 +159,7 @@ function resizablePanel(panel) {
   $el.addClass('panel-resizable');
 
   // Add Events
-  const passive = Support.passiveListener ? { passive: true } : false;
+  const passive = support.passiveListener ? { passive: true } : false;
 
   panel.$el.on(app.touchEvents.start, '.panel-resize-handler', handleTouchStart, passive);
   app.on('touchmove:active', handleTouchMove);

@@ -1,24 +1,27 @@
 <template>
   <div class="page">
     <div class="navbar">
+      <div class="navbar-bg"></div>
       <div class="navbar-inner sliding">
         <div class="left">
-            <a href="#" class="link back">
-              <i class="icon icon-back"></i>
-              <span class="if-not-md">Back</span>
-            </a>
-          </div>
+          <a class="link back">
+            <i class="icon icon-back"></i>
+            <span class="if-not-md">Back</span>
+          </a>
+        </div>
         <div class="title">Swipeout</div>
       </div>
     </div>
     <div class="page-content">
       <div class="block">
         <p>
-          Swipe out actions on list elements is one of the most awesome F7 features. It allows you to call hidden menu for each list element where you can put default ready-to use delete button or any other buttons for some required actions.
+          Swipe out actions on list elements is one of the most awesome F7 features. It allows you to call hidden menu
+          for each list element where you can put default ready-to use delete button or any other buttons for some
+          required actions.
         </p>
       </div>
       <div class="block-title">Swipe to delete with confirm modal</div>
-      <div class="list">
+      <div class="list list-strong list-outline-ios list-dividers-ios inset-md">
         <ul>
           <li class="swipeout">
             <div class="item-content swipeout-content">
@@ -29,7 +32,7 @@
               </div>
             </div>
             <div class="swipeout-actions-right">
-              <a href="#" data-confirm="Are you sure you want to delete this item?" class="swipeout-delete">Delete</a>
+              <a data-confirm="Are you sure you want to delete this item?" class="swipeout-delete">Delete</a>
             </div>
           </li>
           <li class="swipeout">
@@ -41,7 +44,7 @@
               </div>
             </div>
             <div class="swipeout-actions-right">
-              <a href="#" data-confirm="Are you sure you want to delete this item?" class="swipeout-delete">Delete</a>
+              <a data-confirm="Are you sure you want to delete this item?" class="swipeout-delete">Delete</a>
             </div>
           </li>
           <li>
@@ -57,7 +60,7 @@
         </ul>
       </div>
       <div class="block-title">Swipe to delete without confirm</div>
-      <div class="list">
+      <div class="list list-strong list-outline-ios list-dividers-ios inset-md">
         <ul>
           <li class="swipeout">
             <div class="item-content swipeout-content">
@@ -66,7 +69,7 @@
               </div>
             </div>
             <div class="swipeout-actions-right">
-              <a href="#" class="swipeout-delete">Delete</a>
+              <a class="swipeout-delete">Delete</a>
             </div>
           </li>
           <li class="swipeout">
@@ -76,7 +79,7 @@
               </div>
             </div>
             <div class="swipeout-actions-right">
-              <a href="#" class="swipeout-delete">Delete</a>
+              <a class="swipeout-delete">Delete</a>
             </div>
           </li>
           <li>
@@ -89,7 +92,7 @@
         </ul>
       </div>
       <div class="block-title">Swipe for actions</div>
-      <div class="list">
+      <div class="list list-strong list-outline-ios list-dividers-ios inset-md">
         <ul>
           <li class="swipeout">
             <div class="item-content swipeout-content">
@@ -101,8 +104,8 @@
               </div>
             </div>
             <div class="swipeout-actions-right">
-              <a href="#" @click="more">More</a>
-              <a href="#" class="swipeout-delete">Delete</a>
+              <a @click=${more}>More</a>
+              <a class="swipeout-delete">Delete</a>
             </div>
           </li>
           <li class="swipeout">
@@ -115,8 +118,8 @@
               </div>
             </div>
             <div class="swipeout-actions-right">
-              <a href="#" @click="more">More</a>
-              <a href="#" class="swipeout-delete">Delete</a>
+              <a @click=${more}>More</a>
+              <a class="swipeout-delete">Delete</a>
             </div>
           </li>
           <li class="swipeout">
@@ -129,32 +132,32 @@
               </div>
             </div>
             <div class="swipeout-actions-right">
-              <a href="#" @click="more">More</a>
+              <a @click=${more}>More</a>
             </div>
           </li>
         </ul>
       </div>
       <div class="block-title">With callback on remove</div>
-      <div class="list">
+      <div class="list list-strong list-outline-ios list-dividers-ios inset-md">
         <ul>
-          <li class="swipeout" @swipeout:deleted="onDeleted">
+          <li class="swipeout" @swipeout:deleted=${onDeleted}>
             <div class="item-content swipeout-content">
               <div class="item-inner">
                 <div class="item-title">Swipe left on me please</div>
               </div>
             </div>
             <div class="swipeout-actions-right">
-              <a href="#" class="swipeout-delete">Delete</a>
+              <a class="swipeout-delete">Delete</a>
             </div>
           </li>
-          <li class="swipeout" @swipeout:deleted="onDeleted">
+          <li class="swipeout" @swipeout:deleted=${onDeleted}>
             <div class="item-content swipeout-content">
               <div class="item-inner">
                 <div class="item-title">Swipe left on me too</div>
               </div>
             </div>
             <div class="swipeout-actions-right">
-              <a href="#" class="swipeout-delete">Delete</a>
+              <a class="swipeout-delete">Delete</a>
             </div>
           </li>
           <li>
@@ -167,7 +170,7 @@
         </ul>
       </div>
       <div class="block-title">With actions on left side (swipe to right)</div>
-      <div class="list">
+      <div class="list list-strong list-outline-ios list-dividers-ios inset-md">
         <ul>
           <li class="swipeout">
             <div class="item-content swipeout-content">
@@ -179,8 +182,8 @@
               </div>
             </div>
             <div class="swipeout-actions-left">
-              <a href="#" class="color-green" @click="reply">Reply</a>
-              <a href="#" class="color-blue" @click="forward">Forward</a>
+              <a class="color-green" @click=${reply}>Reply</a>
+              <a class="color-blue" @click=${forward}>Forward</a>
             </div>
           </li>
           <li class="swipeout">
@@ -193,18 +196,18 @@
               </div>
             </div>
             <div class="swipeout-actions-left">
-              <a href="#" class="color-green" @click="reply">Reply</a>
-              <a href="#" class="color-blue" @click="forward">Forward</a>
+              <a class="color-green" @click=${reply}>Reply</a>
+              <a class="color-blue" @click=${forward}>Forward</a>
             </div>
           </li>
         </ul>
       </div>
       <div class="block-title">On both sides with overswipes</div>
-      <div class="list media-list">
+      <div class="list media-list list-strong list-outline-ios list-dividers-ios inset-md">
         <ul>
           <li class="swipeout">
             <div class="swipeout-content">
-              <a href="#" class="item-link item-content">
+              <a class="item-link item-content">
                 <div class="item-inner">
                   <div class="item-title-row">
                     <div class="item-title">Facebook</div>
@@ -212,24 +215,28 @@
                   </div>
                   <div class="item-subtitle">New messages from John Doe</div>
                   <div class="item-text">
-                    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla sagittis tellus ut turpis condimentum, ut dignissim lacus tincidunt. Cras dolor metus, ultrices condimentum sodales sit amet, pharetra sodales eros. Phasellus vel felis tellus. Mauris rutrum ligula nec dapibus feugiat. In vel dui laoreet, commodo augue id, pulvinar lacus.
+                    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla sagittis tellus ut turpis
+                    condimentum, ut dignissim lacus tincidunt. Cras dolor metus, ultrices condimentum sodales sit amet,
+                    pharetra sodales eros. Phasellus vel felis tellus. Mauris rutrum ligula nec dapibus feugiat. In vel
+                    dui laoreet, commodo augue id, pulvinar lacus.
                   </div>
                 </div>
               </a>
             </div>
             <div class="swipeout-actions-left">
-              <a href="#" class="color-green swipeout-overswipe" @click="reply">Reply</a>
-              <a href="#" class="color-blue" @click="forward">Forward</a>
+              <a class="color-green swipeout-overswipe" @click=${reply}>Reply</a>
+              <a class="color-blue" @click=${forward}>Forward</a>
             </div>
             <div class="swipeout-actions-right">
-              <a href="#" @click="more">More</a>
-              <a href="#" class="color-orange" @click="mark">Mark</a>
-              <a href="#" data-confirm="Are you sure you want to delete this item?" class="swipeout-delete swipeout-overswipe">Delete</a>
+              <a @click=${more}>More</a>
+              <a class="color-orange" @click=${mark}>Mark</a>
+              <a data-confirm="Are you sure you want to delete this item?"
+                class="swipeout-delete swipeout-overswipe">Delete</a>
             </div>
           </li>
           <li class="swipeout">
             <div class="swipeout-content">
-              <a href="#" class="item-link item-content">
+              <a class="item-link item-content">
                 <div class="item-inner">
                   <div class="item-title-row">
                     <div class="item-title">John Doe (via Twitter)</div>
@@ -237,24 +244,28 @@
                   </div>
                   <div class="item-subtitle">John Doe (@_johndoe) mentioned you on Twitter!</div>
                   <div class="item-text">
-                    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla sagittis tellus ut turpis condimentum, ut dignissim lacus tincidunt. Cras dolor metus, ultrices condimentum sodales sit amet, pharetra sodales eros. Phasellus vel felis tellus. Mauris rutrum ligula nec dapibus feugiat. In vel dui laoreet, commodo augue id, pulvinar lacus.
+                    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla sagittis tellus ut turpis
+                    condimentum, ut dignissim lacus tincidunt. Cras dolor metus, ultrices condimentum sodales sit amet,
+                    pharetra sodales eros. Phasellus vel felis tellus. Mauris rutrum ligula nec dapibus feugiat. In vel
+                    dui laoreet, commodo augue id, pulvinar lacus.
                   </div>
                 </div>
               </a>
             </div>
             <div class="swipeout-actions-left">
-              <a href="#" class="color-green swipeout-overswipe" @click="reply">Reply</a>
-              <a href="#" class="color-blue" @click="forward">Forward</a>
+              <a class="color-green swipeout-overswipe" @click=${reply}>Reply</a>
+              <a class="color-blue" @click=${forward}>Forward</a>
             </div>
             <div class="swipeout-actions-right">
-              <a href="#" @click="more">More</a>
-              <a href="#" class="color-orange" @click="mark">Mark</a>
-              <a href="#" data-confirm="Are you sure you want to delete this item?" class="swipeout-delete swipeout-overswipe">Delete</a>
+              <a @click=${more}>More</a>
+              <a class="color-orange" @click=${mark}>Mark</a>
+              <a data-confirm="Are you sure you want to delete this item?"
+                class="swipeout-delete swipeout-overswipe">Delete</a>
             </div>
           </li>
           <li class="swipeout">
             <div class="swipeout-content">
-              <a href="#" class="item-link item-content">
+              <a class="item-link item-content">
                 <div class="item-inner">
                   <div class="item-title-row">
                     <div class="item-title">Facebook</div>
@@ -262,24 +273,28 @@
                   </div>
                   <div class="item-subtitle">New messages from John Doe</div>
                   <div class="item-text">
-                    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla sagittis tellus ut turpis condimentum, ut dignissim lacus tincidunt. Cras dolor metus, ultrices condimentum sodales sit amet, pharetra sodales eros. Phasellus vel felis tellus. Mauris rutrum ligula nec dapibus feugiat. In vel dui laoreet, commodo augue id, pulvinar lacus.
+                    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla sagittis tellus ut turpis
+                    condimentum, ut dignissim lacus tincidunt. Cras dolor metus, ultrices condimentum sodales sit amet,
+                    pharetra sodales eros. Phasellus vel felis tellus. Mauris rutrum ligula nec dapibus feugiat. In vel
+                    dui laoreet, commodo augue id, pulvinar lacus.
                   </div>
                 </div>
               </a>
             </div>
             <div class="swipeout-actions-left">
-              <a href="#" class="color-green swipeout-overswipe" @click="reply">Reply</a>
-              <a href="#" class="color-blue" @click="forward">Forward</a>
+              <a class="color-green swipeout-overswipe" @click=${reply}>Reply</a>
+              <a class="color-blue" @click=${forward}>Forward</a>
             </div>
             <div class="swipeout-actions-right">
-              <a href="#" @click="more">More</a>
-              <a href="#" class="color-orange" @click="mark">Mark</a>
-              <a href="#" data-confirm="Are you sure you want to delete this item?" class="swipeout-delete swipeout-overswipe">Delete</a>
+              <a @click=${more}>More</a>
+              <a class="color-orange" @click=${mark}>Mark</a>
+              <a data-confirm="Are you sure you want to delete this item?"
+                class="swipeout-delete swipeout-overswipe">Delete</a>
             </div>
           </li>
           <li class="swipeout">
             <div class="swipeout-content">
-              <a href="#" class="item-link item-content">
+              <a class="item-link item-content">
                 <div class="item-inner">
                   <div class="item-title-row">
                     <div class="item-title">John Doe (via Twitter)</div>
@@ -287,19 +302,23 @@
                   </div>
                   <div class="item-subtitle">John Doe (@_johndoe) mentioned you on Twitter!</div>
                   <div class="item-text">
-                    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla sagittis tellus ut turpis condimentum, ut dignissim lacus tincidunt. Cras dolor metus, ultrices condimentum sodales sit amet, pharetra sodales eros. Phasellus vel felis tellus. Mauris rutrum ligula nec dapibus feugiat. In vel dui laoreet, commodo augue id, pulvinar lacus.
+                    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla sagittis tellus ut turpis
+                    condimentum, ut dignissim lacus tincidunt. Cras dolor metus, ultrices condimentum sodales sit amet,
+                    pharetra sodales eros. Phasellus vel felis tellus. Mauris rutrum ligula nec dapibus feugiat. In vel
+                    dui laoreet, commodo augue id, pulvinar lacus.
                   </div>
                 </div>
               </a>
             </div>
             <div class="swipeout-actions-left">
-              <a href="#" class="color-green swipeout-overswipe" @click="reply">Reply</a>
-              <a href="#" class="color-blue" @click="forward">Forward</a>
+              <a class="color-green swipeout-overswipe" @click=${reply}>Reply</a>
+              <a class="color-blue" @click=${forward}>Forward</a>
             </div>
             <div class="swipeout-actions-right">
-              <a href="#" @click="more">More</a>
-              <a href="#" class="color-orange" @click="mark">Mark</a>
-              <a href="#" data-confirm="Are you sure you want to delete this item?" class="swipeout-delete swipeout-overswipe">Delete</a>
+              <a @click=${more}>More</a>
+              <a class="color-orange" @click=${mark}>Mark</a>
+              <a data-confirm="Are you sure you want to delete this item?"
+                class="swipeout-delete swipeout-overswipe">Delete</a>
             </div>
           </li>
         </ul>
@@ -308,60 +327,53 @@
   </div>
 </template>
 <script>
-  return {
-    methods: {
-      more: function () {
-        var self = this;
-        self.actions.open();
-      },
-      mark: function () {
-        var app = this.$app;
-        app.dialog.alert('Mark');
-      },
-      reply: function () {
-        var app = this.$app;
-        app.dialog.alert('Reply');
-      },
-      forward: function () {
-        var app = this.$app;
-        app.dialog.alert('Forward');
-      },
-      onDeleted: function () {
-        var app = this.$app;
-        app.dialog.alert('Thanks, item removed!');
-      },
-    },
-    on: {
-      pageBeforeRemove() {
-        var self = this;
-        self.actions.destroy();
-      },
-      pageInit: function () {
-        var self = this;
-        var app = self.$app;
-        self.actions = app.actions.create({
-          buttons: [
-            [
-              {
-                text: 'Here comes some optional description or warning for actions below',
-                label: true,
-              },
-              {
-                text: 'Action 1',
-              },
-              {
-                text: 'Action 2',
-              },
-            ],
-            [
-              {
-                text: 'Cancel',
-                bold: true,
-              }
-            ]
-          ],
-        })
-      },
+  export default (props, { $f7, $onMounted, $onBeforeUnmount }) => {
+    let actions;
+    const more = () => {
+      actions.open();
     }
+    const mark = () => {
+      $f7.dialog.alert('Mark');
+    }
+    const reply = () => {
+      $f7.dialog.alert('Reply');
+    }
+    const forward = () => {
+      $f7.dialog.alert('Forward');
+    }
+    const onDeleted = () => {
+      $f7.dialog.alert('Thanks, item removed!');
+    }
+
+    $onBeforeUnmount(() => {
+      actions.destroy();
+    })
+
+    $onMounted(() => {
+      actions = $f7.actions.create({
+        buttons: [
+          [
+            {
+              text: 'Here comes some optional description or warning for actions below',
+              label: true,
+            },
+            {
+              text: 'Action 1',
+            },
+            {
+              text: 'Action 2',
+            },
+          ],
+          [
+            {
+              text: 'Cancel',
+              strong: true,
+            }
+          ]
+        ],
+      })
+    })
+
+    return $render;
   }
 </script>

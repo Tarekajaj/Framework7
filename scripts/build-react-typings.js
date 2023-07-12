@@ -3,65 +3,99 @@
 /* eslint global-require: "off" */
 /* eslint no-param-reassign: "off" */
 
-const path = require('path');
-const getOutput = require('./get-output');
-const fs = require('./utils/fs-extra');
+const getOutput = require('./get-output.js');
+const fs = require('./utils/fs-extra.js');
+const { COLOR_PROPS, ICON_PROPS, ROUTER_PROPS, ACTIONS_PROPS } = require('./ts-extend-props.js');
 
-const importLib = `
-import * as React from 'react';
-`.trim();
-
-const libExtension = `
-declare module 'react' {
-  interface Component extends Partial<Framework7Extensions> {}
+function generateComponentProps(propsContent) {
+  // eslint-disable-next-line
+  const props = {};
+  propsContent
+    .trim()
+    .replace('COLOR_PROPS', COLOR_PROPS)
+    .replace('ICON_PROPS', ICON_PROPS)
+    .replace('ROUTER_PROPS', ROUTER_PROPS)
+    .replace('ACTIONS_PROPS', ACTIONS_PROPS)
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => !!line)
+    .forEach((line) => {
+      const propName = line.split(':')[0].replace('?', '');
+      let propValue = line.split(':').slice(1).join(':');
+      if (propValue.charAt(propValue.length - 1) === ';') {
+        propValue = propValue.substr(0, propValue.length - 1);
+      }
+      props[propName] = propValue.trim();
+    });
+  const content = Object.keys(props)
+    .map((propName) => `${propName}?: ${props[propName]};`)
+    .join('\n  ');
+  return content;
 }
-`.trim();
 
-const declarePlugin = `
-declare const Framework7React: Framework7Plugin;
-`.trim();
+function generateComponentTypings(componentName, fileContent) {
+  if (componentName.includes('Swiper') || componentName.includes('Skeleton')) return fileContent;
+  let imports = '';
+  let props = '';
+  let propsExtends = '';
+  if (fileContent.indexOf('/* dts-imports') >= 0) {
+    imports = fileContent.split('/* dts-imports')[1].split('*/')[0] || '';
+  }
+  if (fileContent.indexOf('/* dts-props') >= 0) {
+    props = fileContent.split('/* dts-props')[1].split('*/')[0] || '';
+  }
+  if (fileContent.indexOf('/* dts-extends') >= 0) {
+    propsExtends = fileContent.split('/* dts-extends')[1].split('*/')[0] || '';
+  }
+  return `
+import * as React from 'react';
+// IMPORTS
 
-const exportPlugin = `
-export default Framework7React;
-`.trim();
+export interface ${componentName}Props${propsExtends ? ` extends ${propsExtends.trim()}` : ''} {
+  slot?: string;
+  // PROPS
+}
+declare const ${componentName}: React.FunctionComponent<${componentName}Props>;
+
+export default ${componentName};
+  `
+    .replace('// IMPORTS', imports)
+    .replace('// PROPS', generateComponentProps(props));
+}
 
 function buildTypings(cb) {
   const output = `${getOutput()}/react`;
 
-  const files = fs.readdirSync(`${output}/components`).filter(file => file.indexOf('.d.ts') < 0);
-
-  const components = [];
+  const files = fs.readdirSync('src/react/components').filter((file) => file.indexOf('.d.ts') < 0);
   const componentImports = [];
   const componentExports = [];
 
   files.forEach((fileName) => {
     const componentName = fileName
-      .replace('.js', '')
+      .replace('.jsx', '')
       .split('-')
-      .map(word => word[0].toUpperCase() + word.substr(1))
+      .map((word) => word[0].toUpperCase() + word.substr(1))
       .join('');
-    components.push({
-      name: `${componentName}`,
-      importName: `F7${componentName}`,
-    });
-    componentImports.push(`import F7${componentName} from './components/${fileName.replace('.js', '')}';`);
-    componentExports.push(`  F7${componentName}`, `  F7${componentName} as ${componentName}`);
+    const fileBase = fileName.replace('.jsx', '');
+    componentImports.push(`import ${componentName} from './components/${fileBase}.js';`);
+    componentExports.push(componentName);
+
+    const typingsContent = generateComponentTypings(
+      componentName,
+      fs.readFileSync(`src/react/components/${fileName}`, 'utf-8'),
+    );
+
+    fs.writeFileSync(`${output}/components/${fileBase}.d.ts`, typingsContent);
   });
 
-  let reactTypings = fs.readFileSync(path.resolve(__dirname, '../src/phenome/framework7-phenome.d.ts'));
-  reactTypings = reactTypings
-    .replace('// IMPORT_LIB', importLib)
+  const mainTypings = fs
+    .readFileSync('src/react/framework7-react.d.ts', 'utf-8')
     .replace('// IMPORT_COMPONENTS', componentImports.join('\n'))
-    .replace('// LIB_EXTENSION', libExtension)
-    .replace('// EXPORT_COMPONENTS', `export {\n${componentExports.join(',\n')}\n}`)
-    .replace('// DECLARE_PLUGIN', declarePlugin)
-    .replace('// EXPORT_PLUGIN', exportPlugin);
+    .replace('// EXPORT_COMPONENTS', `export { ${componentExports.join(', ')} }`);
 
-  fs.writeFileSync(`${output}/framework7-react.d.ts`, reactTypings);
-  fs.writeFileSync(`${output}/framework7-react.bundle.d.ts`, reactTypings);
-  fs.writeFileSync(`${output}/framework7-react.esm.d.ts`, reactTypings);
+  fs.writeFileSync(`${output}/framework7-react.d.ts`, mainTypings);
 
-  cb();
+  if (cb) cb();
 }
 
 module.exports = buildTypings;

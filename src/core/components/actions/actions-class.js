@@ -1,20 +1,24 @@
 /* eslint indent: ["off"] */
-import $ from 'dom7';
-import Utils from '../../utils/utils';
-import Modal from '../modal/modal-class';
+import { getWindow, getDocument } from 'ssr-window';
+import { getDevice } from '../../shared/get-device.js';
+import { extend, nextTick } from '../../shared/utils.js';
+import Modal from '../modal/modal-class.js';
+import $ from '../../shared/dom7.js';
+/** @jsx $jsx */
+import $jsx from '../../shared/$jsx.js';
 
 class Actions extends Modal {
   constructor(app, params) {
-    const extendedParams = Utils.extend(
-      { on: {} },
-      app.params.actions,
-      params
-    );
+    const extendedParams = extend({ on: {} }, app.params.actions, params);
 
     // Extends with open/close Modal methods;
     super(app, extendedParams);
 
     const actions = this;
+
+    const device = getDevice();
+    const window = getWindow();
+    const document = getDocument();
 
     actions.params = extendedParams;
 
@@ -31,7 +35,9 @@ class Actions extends Modal {
     if (actions.params.el) {
       $el = $(actions.params.el).eq(0);
     } else if (actions.params.content) {
-      $el = $(actions.params.content).filter((elIndex, node) => node.nodeType === 1).eq(0);
+      $el = $(actions.params.content)
+        .filter((node) => node.nodeType === 1)
+        .eq(0);
     } else if (actions.params.buttons) {
       if (actions.params.convertToPopover) {
         actions.popoverHtml = actions.renderPopover();
@@ -52,10 +58,15 @@ class Actions extends Modal {
     if (actions.params.backdrop && actions.params.backdropEl) {
       $backdropEl = $(actions.params.backdropEl);
     } else if (actions.params.backdrop) {
-      $backdropEl = app.root.children('.actions-backdrop');
+      if (actions.params.backdropUnique) {
+        $backdropEl = $('<div class="popup-backdrop popup-backdrop-unique"></div>');
+        actions.$containerEl.append($backdropEl);
+      } else {
+        $backdropEl = actions.$containerEl.children('.actions-backdrop');
+      }
       if ($backdropEl.length === 0) {
         $backdropEl = $('<div class="actions-backdrop"></div>');
-        app.root.append($backdropEl);
+        actions.$containerEl.append($backdropEl);
       }
     }
 
@@ -84,19 +95,23 @@ class Actions extends Modal {
     actions.open = function open(animate) {
       let convertToPopover = false;
       const { targetEl, targetX, targetY, targetWidth, targetHeight } = actions.params;
-      if (actions.params.convertToPopover && (targetEl || (targetX !== undefined && targetY !== undefined))) {
+      if (
+        actions.params.convertToPopover &&
+        (targetEl || (targetX !== undefined && targetY !== undefined))
+      ) {
         // Popover
         if (
-          actions.params.forceToPopover
-          || (app.device.ios && app.device.ipad)
-          || app.width >= 768
-          || (app.device.desktop && app.theme === 'aurora')
+          actions.params.forceToPopover ||
+          (device.ios && device.ipad) ||
+          app.width >= 768 ||
+          device.desktop
         ) {
           convertToPopover = true;
         }
       }
       if (convertToPopover && actions.popoverHtml) {
         popover = app.popover.create({
+          containerEl: actions.params.containerEl,
           content: actions.popoverHtml,
           backdrop: actions.params.backdrop,
           targetEl,
@@ -104,18 +119,48 @@ class Actions extends Modal {
           targetY,
           targetWidth,
           targetHeight,
+          on: {
+            open() {
+              if (!actions.$el) {
+                actions.$el = popover.$el;
+              }
+              actions.$el.trigger(`modal:open ${actions.type.toLowerCase()}:open`);
+              actions.emit(`local::open modalOpen ${actions.type}Open`, actions);
+            },
+            opened() {
+              if (!actions.$el) {
+                actions.$el = popover.$el;
+              }
+              actions.$el.trigger(`modal:opened ${actions.type.toLowerCase()}:opened`);
+              actions.emit(`local::opened modalOpened ${actions.type}Opened`, actions);
+            },
+            close() {
+              if (!actions.$el) {
+                actions.$el = popover.$el;
+              }
+              actions.$el.trigger(`modal:close ${actions.type.toLowerCase()}:close`);
+              actions.emit(`local::close modalClose ${actions.type}Close`, actions);
+            },
+            closed() {
+              if (!actions.$el) {
+                actions.$el = popover.$el;
+              }
+              actions.$el.trigger(`modal:closed ${actions.type.toLowerCase()}:closed`);
+              actions.emit(`local::closed modalClosed ${actions.type}Closed`, actions);
+            },
+          },
         });
         popover.open(animate);
         popover.once('popoverOpened', () => {
-          popover.$el.find('.list-button, .item-link').each((groupIndex, buttonEl) => {
+          popover.$el.find('.list-button, .item-link').each((buttonEl) => {
             $(buttonEl).on('click', buttonOnClick);
           });
         });
         popover.once('popoverClosed', () => {
-          popover.$el.find('.list-button, .item-link').each((groupIndex, buttonEl) => {
+          popover.$el.find('.list-button, .item-link').each((buttonEl) => {
             $(buttonEl).off('click', buttonOnClick);
           });
-          Utils.nextTick(() => {
+          nextTick(() => {
             popover.destroy();
             popover = undefined;
           });
@@ -124,11 +169,11 @@ class Actions extends Modal {
         actions.$el = actions.actionsHtml ? $(actions.actionsHtml) : actions.$el;
         actions.$el[0].f7Modal = actions;
         if (actions.groups) {
-          actions.$el.find('.actions-button').each((groupIndex, buttonEl) => {
+          actions.$el.find('.actions-button').each((buttonEl) => {
             $(buttonEl).on('click', buttonOnClick);
           });
           actions.once('actionsClosed', () => {
-            actions.$el.find('.actions-button').each((groupIndex, buttonEl) => {
+            actions.$el.find('.actions-button').each((buttonEl) => {
               $(buttonEl).off('click', buttonOnClick);
             });
           });
@@ -148,7 +193,7 @@ class Actions extends Modal {
       return actions;
     };
 
-    Utils.extend(actions, {
+    extend(actions, {
       app,
       $el,
       el: $el ? $el[0] : undefined,
@@ -160,14 +205,20 @@ class Actions extends Modal {
     function handleClick(e) {
       const target = e.target;
       const $target = $(target);
-      const keyboardOpened = !app.device.desktop && app.device.cordova && ((window.Keyboard && window.Keyboard.isVisible) || (window.cordova.plugins && window.cordova.plugins.Keyboard && window.cordova.plugins.Keyboard.isVisible));
+      const keyboardOpened =
+        !device.desktop &&
+        device.cordova &&
+        ((window.Keyboard && window.Keyboard.isVisible) ||
+          (window.cordova.plugins &&
+            window.cordova.plugins.Keyboard &&
+            window.cordova.plugins.Keyboard.isVisible));
       if (keyboardOpened) return;
       if ($target.closest(actions.el).length === 0) {
         if (
-          actions.params.closeByBackdropClick
-          && actions.params.backdrop
-          && actions.backdropEl
-          && actions.backdropEl === target
+          actions.params.closeByBackdropClick &&
+          actions.params.backdrop &&
+          actions.backdropEl &&
+          actions.backdropEl === target
         ) {
           actions.close();
         } else if (actions.params.closeByOutsideClick) {
@@ -214,46 +265,51 @@ class Actions extends Modal {
     const actions = this;
     if (actions.params.render) return actions.params.render.call(actions, actions);
     const { groups } = actions;
-    return `
-      <div class="actions-modal${actions.params.grid ? ' actions-grid' : ''}">
-        ${groups.map(group => `<div class="actions-group">
-            ${group.map((button) => {
+    const cssClass = actions.params.cssClass;
+    return (
+      <div class={`actions-modal${actions.params.grid ? ' actions-grid' : ''} ${cssClass || ''}`}>
+        {groups.map((group) => (
+          <div class="actions-group">
+            {group.map((button) => {
               const buttonClasses = [`actions-${button.label ? 'label' : 'button'}`];
-              const { color, bg, bold, disabled, label, text, icon } = button;
+              const { color, bg, strong, disabled, label, text, icon } = button;
               if (color) buttonClasses.push(`color-${color}`);
               if (bg) buttonClasses.push(`bg-color-${bg}`);
-              if (bold) buttonClasses.push('actions-button-bold');
+              if (strong) buttonClasses.push('actions-button-strong');
               if (disabled) buttonClasses.push('disabled');
               if (label) {
-                return `<div class="${buttonClasses.join(' ')}">${text}</div>`;
+                return <div class={buttonClasses.join(' ')}>{text}</div>;
               }
-              return `
-                <div class="${buttonClasses.join(' ')}">
-                  ${icon ? `<div class="actions-button-media">${icon}</div>` : ''}
-                  <div class="actions-button-text">${text}</div>
-                </div>`.trim();
-            }).join('')}
-          </div>`).join('')}
+              return (
+                <div class={buttonClasses.join(' ')}>
+                  {icon && <div class="actions-button-media">{icon}</div>}
+                  <div class="actions-button-text">{text}</div>
+                </div>
+              );
+            })}
+          </div>
+        ))}
       </div>
-    `.trim();
+    );
   }
 
   renderPopover() {
     const actions = this;
     if (actions.params.renderPopover) return actions.params.renderPopover.call(actions, actions);
     const { groups } = actions;
-    return `
-      <div class="popover popover-from-actions">
+    const cssClass = actions.params.cssClass;
+    return (
+      <div class={`popover popover-from-actions ${cssClass || ''}`}>
         <div class="popover-inner">
-          ${groups.map(group => `
+          {groups.map((group) => (
             <div class="list">
               <ul>
-                ${group.map((button) => {
+                {group.map((button) => {
                   const itemClasses = [];
-                  const { color, bg, bold, disabled, label, text, icon } = button;
+                  const { color, bg, strong, disabled, label, text, icon } = button;
                   if (color) itemClasses.push(`color-${color}`);
                   if (bg) itemClasses.push(`bg-color-${bg}`);
-                  if (bold) itemClasses.push('popover-from-actions-bold');
+                  if (strong) itemClasses.push('popover-from-actions-strong');
                   if (disabled) itemClasses.push('disabled');
                   if (label) {
                     itemClasses.push('popover-from-actions-label');
@@ -261,34 +317,30 @@ class Actions extends Modal {
                   }
                   if (icon) {
                     itemClasses.push('item-link item-content');
-                    return `
+                    return (
                       <li>
-                        <a class="${itemClasses.join(' ')}">
-                          <div class="item-media">
-                            ${icon}
-                          </div>
+                        <a class={itemClasses.join(' ')}>
+                          <div class="item-media">{icon}</div>
                           <div class="item-inner">
-                            <div class="item-title">
-                              ${text}
-                            </div>
+                            <div class="item-title">{text}</div>
                           </div>
                         </a>
                       </li>
-                    `;
+                    );
                   }
                   itemClasses.push('list-button');
-                  return `
+                  return (
                     <li>
-                      <a class="${itemClasses.join(' ')}">${text}</a>
+                      <a class={itemClasses.join(' ')}>{text}</a>
                     </li>
-                  `;
-                }).join('')}
+                  );
+                })}
               </ul>
             </div>
-          `).join('')}
+          ))}
         </div>
       </div>
-    `.trim();
+    );
   }
 }
 

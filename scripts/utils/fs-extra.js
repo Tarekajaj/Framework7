@@ -13,14 +13,17 @@ const fsExtra = {
   },
   mkdirSync(dir) {
     if (fs.existsSync(dir)) {
-      fs.mkdirSync(dir);
+      fs.mkdirSync(dir, { recursive: true });
       return;
     }
     dir.split(path.sep).forEach((part, index) => {
       if (!part) return;
-      const partialPath = dir.split(path.sep).slice(0, index + 1).join(path.sep);
+      const partialPath = dir
+        .split(path.sep)
+        .slice(0, index + 1)
+        .join(path.sep);
       if (!fs.existsSync(partialPath)) {
-        fs.mkdirSync(partialPath);
+        fs.mkdirSync(partialPath, { recursive: true });
       }
     });
   },
@@ -31,7 +34,13 @@ const fsExtra = {
     if (!fs.existsSync(path.dirname(file))) {
       fsExtra.mkdirSync(path.dirname(file));
     }
-    return fs.writeFileSync(file, content);
+    return fs.writeFileSync(file, content, {});
+  },
+  copyFileSync(src, dest) {
+    if (!fs.existsSync(path.dirname(dest))) {
+      fsExtra.mkdirSync(path.dirname(dest));
+    }
+    return fs.copyFileSync(src, dest);
   },
 };
 
